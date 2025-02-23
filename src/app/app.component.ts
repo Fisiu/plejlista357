@@ -1,12 +1,5 @@
 import { CommonModule } from '@angular/common';
-import {
-  Component,
-  computed,
-  HostBinding,
-  inject,
-  Renderer2,
-  signal,
-} from '@angular/core';
+import { Component, computed, inject, Renderer2, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterOutlet } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
