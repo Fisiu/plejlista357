@@ -27,6 +27,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
+      - name: Build
+        run: pnpm build
+
       - name: Prepare and deploy
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
