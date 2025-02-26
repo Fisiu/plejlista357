@@ -37,7 +37,7 @@
     "angular-eslint": "19.1.0",
     "autoprefixer": "^10.4.20",
     "eslint": "^9.20.0",
-    "eslint-config-prettier": "^10.0.1",
+    "eslint-config-prettier": "^10.0.2",
     "eslint-plugin-import": "^2.31.0",
     "eslint-plugin-prettier": "^5.2.3",
     "jasmine-core": "~5.5.0",
