@@ -30,4 +30,4 @@ jobs:
       - name: Prepare and deploy
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-        run: pnpm run ng deploy --base-href=/${{ vars.GH_BASE_HREF }}/ --name=${{ vars.GH_NAME }} --email=${{ vars.GH_EMAIL }}
+        run: pnpm run ng deploy --base-href=/'${{ vars.GH_BASE_HREF }}'/ --name='${{ vars.GH_NAME }}' --email='${{ vars.GH_EMAIL }}'
