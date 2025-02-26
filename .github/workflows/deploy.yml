@@ -1,0 +1,32 @@
+name: Build & Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts
+          cache: 'pnpm'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Prepare and deploy
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: pnpm run ng deploy --base-href=/${{ vars.GH_BASE_HREF }}/
