@@ -32,8 +32,8 @@ export class AppComponent {
     this.isDarkModeEnabled() ? 'pi pi-sun' : 'pi pi-moon',
   );
 
+  title = 'Plejlista357';
   text = '';
-
   msg = '';
 
   onClick() {
