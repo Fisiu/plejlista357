@@ -34,7 +34,7 @@ jobs:
         run: pnpm install
 
       - name: Build application
-        run: pnpm build --base-href ${{ vars.GH_BASE_HREF }}
+        run: pnpm build --base-href /${{ vars.GH_BASE_HREF }}/
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
