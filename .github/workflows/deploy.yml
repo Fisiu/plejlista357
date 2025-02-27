@@ -32,8 +32,13 @@ jobs:
       - name: Build application
         run: pnpm build
 
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v4
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          github_token: ${{ secrets.GH_TOKEN }}
-          publish_dir: ./dist/${{ vars.GH_BASE_HREF }}/browser
+          path: './dist/${{ vars.GH_BASE_HREF }}/browser'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+        with:
+          token: ${{ secrets.GH_TOKEN }}
