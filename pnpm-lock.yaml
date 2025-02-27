@@ -33,14 +33,14 @@ importers:
         specifier: ^19.2.0
         version: 19.2.0(@angular/common@19.2.0(@angular/core@19.2.0(rxjs@7.8.2)(zone.js@0.15.0))(rxjs@7.8.2))(@angular/core@19.2.0(rxjs@7.8.2)(zone.js@0.15.0))(@angular/platform-browser@19.2.0(@angular/animations@19.2.0(@angular/core@19.2.0(rxjs@7.8.2)(zone.js@0.15.0)))(@angular/common@19.2.0(@angular/core@19.2.0(rxjs@7.8.2)(zone.js@0.15.0))(rxjs@7.8.2))(@angular/core@19.2.0(rxjs@7.8.2)(zone.js@0.15.0)))(rxjs@7.8.2)
       '@primeng/themes':
-        specifier: ^19.0.8
-        version: 19.0.8
+        specifier: ^19.0.9
+        version: 19.0.9
       primeicons:
         specifier: ^7.0.0
         version: 7.0.0
       primeng:
         specifier: ^19.0.8
-        version: 19.0.8(30b02c95ecba85c13158aa66b94009b2)
+        version: 19.0.8(vbyywpxxpjitjx52fnqnstzgii)
       rxjs:
         specifier: ~7.8.2
         version: 7.8.2
@@ -1764,8 +1764,8 @@ packages:
     resolution: {integrity: sha512-cq8o4cWH0ibXh9VGi5P20Tu9XF/0fFXl9EUinr9QfTM7a7p0oTA4iJRCQWppXR1Pg8dSM0UCItCkPwsk9qWWYA==}
     engines: {node: ^12.20.0 || ^14.18.0 || >=16.0.0}
 
-  '@primeng/themes@19.0.8':
-    resolution: {integrity: sha512-queTe7Ruk5Nkwgr4Pz2IAWcYcU4hp/89cUn9m/qKRf2fA5ViD2SWahz0sY2nsLAHGaDfrEiiDqpNIcP4Fx+r7Q==}
+  '@primeng/themes@19.0.9':
+    resolution: {integrity: sha512-8oITYftt/0v6sXKth/6n1mEw4UY88acNow0/aAF5yi29N6cpBaOiH/MEvj4nCoYjNCCGUSFhPrGdkTJH/GNo6A==}
 
   '@primeuix/styled@0.3.2':
     resolution: {integrity: sha512-ColZes0+/WKqH4ob2x8DyNYf1NENpe5ZguOvx5yCLxaP8EIMVhLjWLO/3umJiDnQU4XXMLkn2mMHHw+fhTX/mw==}
@@ -7278,7 +7278,7 @@ snapshots:
 
   '@pkgr/core@0.1.1': {}
 
-  '@primeng/themes@19.0.8':
+  '@primeng/themes@19.0.9':
     dependencies:
       '@primeuix/styled': 0.3.2
 
@@ -10455,7 +10455,7 @@ snapshots:
 
   primeicons@7.0.0: {}
 
-  primeng@19.0.8(30b02c95ecba85c13158aa66b94009b2):
+  primeng@19.0.8(vbyywpxxpjitjx52fnqnstzgii):
     dependencies:
       '@angular/animations': 19.2.0(@angular/core@19.2.0(rxjs@7.8.2)(zone.js@0.15.0))
       '@angular/cdk': 19.1.5(@angular/common@19.2.0(@angular/core@19.2.0(rxjs@7.8.2)(zone.js@0.15.0))(rxjs@7.8.2))(@angular/core@19.2.0(rxjs@7.8.2)(zone.js@0.15.0))(rxjs@7.8.2)
