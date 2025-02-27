@@ -1,6 +1,8 @@
 name: Build & Deploy to GitHub Pages
 
+
 on:
+  workflow_dispatch:
   push:
     branches:
       - master
@@ -9,6 +11,10 @@ jobs:
   deploy:
     name: Build and Deploy
     runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      pages: write
 
     steps:
       - uses: actions/checkout@v4
@@ -27,7 +33,16 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Prepare and deploy
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-        run: pnpm run ng deploy --base-href=/${{ vars.GH_BASE_HREF }}/ --name='${{ vars.GH_NAME }}' --email='${{ vars.GH_EMAIL }}'
+      - name: Build application
+        run: pnpm build --base-href /${{ vars.GH_BASE_HREF }}/
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './dist/${{ vars.GH_BASE_HREF }}/browser'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+        with:
+          token: ${{ secrets.GH_TOKEN }}
