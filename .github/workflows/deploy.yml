@@ -12,6 +12,10 @@ jobs:
     name: Build and Deploy
     runs-on: ubuntu-latest
 
+    permissions:
+      id-token: write
+      pages: write
+
     steps:
       - uses: actions/checkout@v4
 
@@ -30,7 +34,7 @@ jobs:
         run: pnpm install
 
       - name: Build application
-        run: pnpm build
+        run: pnpm build --base-href ${{ vars.GH_BASE_HREF }}
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
