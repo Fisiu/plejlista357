@@ -3,10 +3,11 @@ import { Component, computed, inject, Renderer2, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterOutlet } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
+import { FluidModule } from 'primeng/fluid';
 import { InputTextModule } from 'primeng/inputtext';
 import { MessageModule } from 'primeng/message';
 import { ToggleButtonModule } from 'primeng/togglebutton';
-import { FluidModule } from 'primeng/fluid';
+import { HeaderComponent } from './components/header/header.component';
 
 @Component({
   selector: 'app-root',
@@ -19,6 +20,7 @@ import { FluidModule } from 'primeng/fluid';
     FormsModule,
     ToggleButtonModule,
     FluidModule,
+    HeaderComponent,
   ],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',
