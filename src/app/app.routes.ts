@@ -24,4 +24,9 @@ export const routes: Routes = [
         (c) => c.TopComponent,
       ),
   },
+  {
+    path: '**',
+    redirectTo: '',
+    pathMatch: 'full',
+  },
 ];
