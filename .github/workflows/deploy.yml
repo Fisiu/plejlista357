@@ -36,6 +36,9 @@ jobs:
       - name: Build application
         run: pnpm build --base-href /${{ vars.GH_BASE_HREF }}/
 
+      - name: Add .nojekyll to public directory
+        run: touch dist/${{ vars.GH_BASE_HREF }}/browser/.nojekyll
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
