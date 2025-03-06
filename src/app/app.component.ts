@@ -7,7 +7,7 @@ import { FluidModule } from 'primeng/fluid';
 import { InputTextModule } from 'primeng/inputtext';
 import { MessageModule } from 'primeng/message';
 import { ToggleButtonModule } from 'primeng/togglebutton';
-import { HeaderComponent } from './components/header/header.component';
+import { SharedModule } from './components/shared/shared.module';
 
 @Component({
   selector: 'app-root',
@@ -20,7 +20,7 @@ import { HeaderComponent } from './components/header/header.component';
     FormsModule,
     ToggleButtonModule,
     FluidModule,
-    HeaderComponent,
+    SharedModule,
   ],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',
