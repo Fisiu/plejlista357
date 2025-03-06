@@ -39,6 +39,9 @@ jobs:
       - name: Add .nojekyll to public directory
         run: touch dist/${{ vars.GH_BASE_HREF }}/browser/.nojekyll
 
+      - name: Copy index.html to 404.html
+        run: cp dist/${{ vars.GH_BASE_HREF }}/browser/index.html dist/${{ vars.GH_BASE_HREF }}/browser/404.html
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
