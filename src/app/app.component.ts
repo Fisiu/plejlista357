@@ -68,8 +68,6 @@ export class AppComponent implements OnDestroy {
   }
 
   isNotNotFoundPage(): boolean {
-    console.log(this.currentRoute);
-
     return this.currentRoute === '/404';
   }
 
