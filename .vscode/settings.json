@@ -1,0 +1,10 @@
+{
+    "editor.formatOnSave": true,
+    "[typescript]": {
+        "editor.codeActionsOnSave": {
+            "source.sortImports": "explicit",
+            "source.organizeImports": "explicit",
+            "source.removeUnusedImports": "explicit"
+        }
+    }
+}

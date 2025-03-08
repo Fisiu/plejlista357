@@ -4,9 +4,12 @@
       <div
         class="text-surface-900 dark:text-surface-0 font-normal mb-2 text-4xl"
       >
-        Marvelous Features
+        {{ latestChart()?.name }}
       </div>
-      <span class="text-muted-color text-2xl">Weekly</span>
+      <span class="text-muted-color text-2xl">{{ latestChart()?.title }}</span>
+      <app-numbered-text-area
+        [lines]="latestChartText()"
+      ></app-numbered-text-area>
     </div>
     <div
       class="col-span-12 mt-20 mb-20 p-2 md:p-20"
@@ -50,3 +53,4 @@
     </div>
   </div>
 </div>
+<p-toast></p-toast>

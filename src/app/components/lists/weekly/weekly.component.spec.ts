@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
+import { provideHttpClient } from '@angular/common/http';
 import { WeeklyComponent } from './weekly.component';
 
 describe('WeeklyComponent', () => {
@@ -8,9 +9,9 @@ describe('WeeklyComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [WeeklyComponent]
-    })
-    .compileComponents();
+      imports: [WeeklyComponent],
+      providers: [provideHttpClient()],
+    }).compileComponents();
 
     fixture = TestBed.createComponent(WeeklyComponent);
     component = fixture.componentInstance;
