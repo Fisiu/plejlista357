@@ -1,16 +1,25 @@
 <div id="features" class="py-6 px-6 lg:px-20 mt-8 mx-0 lg:mx-20">
   <div class="grid grid-cols-12 gap-4 justify-center">
-    <div class="col-span-12 text-center mt-20 mb-6">
-      <div
-        class="text-surface-900 dark:text-surface-0 font-normal mb-2 text-4xl"
-      >
-        {{ latestChart()?.name }}
+    @if (loading()) {
+      <p-progress-spinner
+        ariaLabel="loading"
+        class="text-700 col-span-12 text-center"
+      />
+    } @else {
+      <div class="col-span-12 text-center mt-20 mb-6">
+        <div
+          class="text-surface-900 dark:text-surface-0 font-normal mb-2 text-4xl"
+        >
+          {{ latestChart()?.name }}
+        </div>
+        <span class="text-muted-color text-2xl">{{
+          latestChart()?.title
+        }}</span>
+        <app-numbered-text-area
+          [lines]="latestChartText()"
+        ></app-numbered-text-area>
       </div>
-      <span class="text-muted-color text-2xl">{{ latestChart()?.title }}</span>
-      <app-numbered-text-area
-        [lines]="latestChartText()"
-      ></app-numbered-text-area>
-    </div>
+    }
     <div
       class="col-span-12 mt-20 mb-20 p-2 md:p-20"
       style="

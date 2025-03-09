@@ -1,9 +1,17 @@
 import { CommonModule } from '@angular/common';
-import { Component, effect, inject, OnDestroy, OnInit } from '@angular/core';
+import {
+  Component,
+  effect,
+  inject,
+  OnDestroy,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { MessageService } from 'primeng/api';
 import { MessageModule } from 'primeng/message';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { ToastModule } from 'primeng/toast';
-import { Subject, takeUntil } from 'rxjs';
+import { finalize, Subject, takeUntil } from 'rxjs';
 import { DebugLoggerService } from '../../../services/debug-logger.service';
 import { RadioChartService } from '../../../services/radio-chart.service';
 import { NumberedTextAreaComponent } from '../partials/numbered-text-area/numbered-text-area.component';
@@ -15,6 +23,7 @@ import { NumberedTextAreaComponent } from '../partials/numbered-text-area/number
     MessageModule,
     ToastModule,
     NumberedTextAreaComponent,
+    ProgressSpinnerModule,
   ],
   templateUrl: './weekly.component.html',
   styleUrl: './weekly.component.scss',
@@ -29,6 +38,7 @@ export class WeeklyComponent implements OnInit, OnDestroy {
 
   latestChart = this.radioChartService.latestWeeklyChart.asReadonly();
   latestChartText = this.radioChartService.latestWeeklyChartText.asReadonly();
+  loading = signal<boolean>(false);
 
   constructor() {
     effect(() => {
@@ -46,9 +56,14 @@ export class WeeklyComponent implements OnInit, OnDestroy {
   }
 
   getLatestChartNumber(): void {
+    this.loading.set(true);
+
     this.radioChartService
       .getLatestChart()
-      .pipe(takeUntil(this.destroy$))
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => this.loading.set(false)),
+      )
       .subscribe({
         next: (data) => {
           this.radioChartService.latestWeeklyChartText.set(data);
