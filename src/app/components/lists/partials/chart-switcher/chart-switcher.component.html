@@ -1,0 +1,14 @@
+<p-inputnumber
+  [ngModel]="chartNumber()"
+  (ngModelChange)="onChartNumberChange($event)"
+  [showButtons]="true"
+  buttonLayout="horizontal"
+  spinnerMode="horizontal"
+  inputId="horizontal"
+  min="1"
+  [max]="latestChartNumber()"
+  [inputStyle]="{ width: '5rem', textAlign: 'center' }"
+  incrementButtonIcon="pi pi-plus"
+  decrementButtonIcon="pi pi-minus"
+>
+</p-inputnumber>

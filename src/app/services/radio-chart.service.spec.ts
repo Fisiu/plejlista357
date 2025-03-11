@@ -5,7 +5,7 @@ import {
   HttpTestingController,
   provideHttpClientTesting,
 } from '@angular/common/http/testing';
-import { ChartSummary } from './radio-chart.model';
+import { Chart, ChartSummary } from './radio-chart.model';
 import { RadioChartService } from './radio-chart.service';
 
 describe('RadioChartService', () => {
@@ -33,48 +33,130 @@ describe('RadioChartService', () => {
     expect(service).toBeTruthy();
   });
 
-  describe('getAllChartSummaries', () => {
-    const mockChartSummaries: ChartSummary[] = [
+  describe('getLatestChartNumber', () => {
+    const mockResponse: ChartSummary[] = [
       {
-        no: '1',
+        no: '123',
         published_at: '2023-10-01 17:00:00',
         published_at_date: '2023-10-01',
       },
       {
-        no: '2',
+        no: '122',
         published_at: '2023-09-24 127:00:00',
         published_at_date: '2023-09-24',
       },
     ];
 
-    it('should return an Observable of ChartSummary array', () => {
-      service.getAllChartSummaries().subscribe((summaries) => {
-        expect(summaries).toEqual(mockChartSummaries);
+    it('should return the latest chart number', () => {
+      service.getLatestChartNumber().subscribe((number) => {
+        expect(number).toBe(123);
+        expect(service.latestWeeklyChartNumber()).toBe(123);
       });
 
       const req = httpMock.expectOne(`${service.baseUrl}/lista/all`);
       expect(req.request.method).toBe('GET');
-      req.flush(mockChartSummaries);
+      req.flush(mockResponse);
     });
-  });
 
-  describe('getLatestChart', () => {
-    const mockChartItems = [
-      { artist: 'Artist1', name: 'Song1' },
-      { artist: 'Artist2', name: 'Song2' },
-    ];
-    const expectedChartData = ['Artist2 - Song2', 'Artist1 - Song1'];
+    it('should handle an empty response', () => {
+      const mockResponse: ChartSummary[] = [];
 
-    it('should return the latest chart as a string array', () => {
-      service.getLatestChart().subscribe((chartData) => {
-        expect(chartData).toEqual(expectedChartData);
+      service.getLatestChartNumber().subscribe((number) => {
+        expect(number).toBe(NaN); // or whatever your service returns when array is empty.
+        expect(service.latestWeeklyChartNumber()).toBe(NaN);
       });
 
-      const req = httpMock.expectOne(`${service.baseUrl}/lista/all`);
+      const req = httpMock.expectOne(`${service.baseUrl}/lista/all`); // Replace service['apiUrl'] with the actual URL used in getAllChartSummaries
       expect(req.request.method).toBe('GET');
-      req.flush({
-        results: { mainChart: { items: mockChartItems } },
-      });
+      req.flush(mockResponse);
     });
   });
+
+  describe('getChartByNumber', () => {
+    it('should return the chart data and update latestWeeklyChartText and weeklyChart', () => {
+      const chartNumber = 123;
+      const mockResponse: Chart = {
+        results: {
+          mainChart: {
+            items: [
+              {
+                artist: 'Artist1',
+                name: 'Song1',
+                id: 1,
+                change: 2,
+                is_new: false,
+                position: 1,
+                times_on_chart: 3,
+                last_position: 3,
+              },
+              {
+                artist: 'Artist2',
+                name: 'Song2',
+                id: 1,
+                change: 2,
+                is_new: false,
+                position: 1,
+                times_on_chart: 3,
+                last_position: 3,
+              },
+            ],
+          },
+          waitingRoom: {
+            items: [],
+            label: 'Poczekalnia',
+          },
+        },
+        summary: {
+          new: 2,
+          up: 1,
+          down: 1,
+          same: 0,
+          max_times_on_chart: 5,
+        },
+        name: 'Weekly Top 10',
+        no: '123',
+        previous_no: '122',
+        next_no: '124',
+        published_at_date: '2023-10-27',
+        document: 'document123.pdf',
+        title: 'Weekly Chart #123',
+        title_template: 'Weekly Chart #{no}',
+      };
+
+      service.getChartByNumber(chartNumber).subscribe((response) => {
+        expect(response).toEqual(mockResponse);
+        expect(service.weeklyChart()).toEqual(mockResponse);
+        expect(service.latestWeeklyChartText()).toEqual([
+          'Artist2 - Song2',
+          'Artist1 - Song1',
+        ]);
+      });
+
+      const req = httpMock.expectOne(
+        `${service['baseUrl']}/lista/${chartNumber}`,
+      );
+      expect(req.request.method).toBe('GET');
+      req.flush(mockResponse);
+    });
+  });
+
+  // describe('getLatestChartNumber', () => {
+  //   const mockChartItems = [
+  //     { artist: 'Artist1', name: 'Song1' },
+  //     { artist: 'Artist2', name: 'Song2' },
+  //   ];
+  //   const expectedChartData = ['Artist2 - Song2', 'Artist1 - Song1'];
+
+  //   it('should return the latest chart as a string array', () => {
+  //     service.getLatestChart().subscribe((chartData) => {
+  //       expect(chartData).toEqual(expectedChartData);
+  //     });
+
+  //     const req = httpMock.expectOne(`${service.baseUrl}/lista/all`);
+  //     expect(req.request.method).toBe('GET');
+  //     req.flush({
+  //       results: { mainChart: { items: mockChartItems } },
+  //     });
+  //   });
+  // });
 });

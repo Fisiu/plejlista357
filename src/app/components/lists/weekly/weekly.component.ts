@@ -1,12 +1,5 @@
 import { CommonModule } from '@angular/common';
-import {
-  Component,
-  effect,
-  inject,
-  OnDestroy,
-  OnInit,
-  signal,
-} from '@angular/core';
+import { Component, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { MessageService } from 'primeng/api';
 import { MessageModule } from 'primeng/message';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
@@ -14,6 +7,7 @@ import { ToastModule } from 'primeng/toast';
 import { finalize, Subject, takeUntil } from 'rxjs';
 import { DebugLoggerService } from '../../../services/debug-logger.service';
 import { RadioChartService } from '../../../services/radio-chart.service';
+import { ChartSwitcherComponent } from '../partials/chart-switcher/chart-switcher.component';
 import { NumberedTextAreaComponent } from '../partials/numbered-text-area/numbered-text-area.component';
 
 @Component({
@@ -24,6 +18,7 @@ import { NumberedTextAreaComponent } from '../partials/numbered-text-area/number
     ToastModule,
     NumberedTextAreaComponent,
     ProgressSpinnerModule,
+    ChartSwitcherComponent,
   ],
   templateUrl: './weekly.component.html',
   styleUrl: './weekly.component.scss',
@@ -36,18 +31,12 @@ export class WeeklyComponent implements OnInit, OnDestroy {
   private readonly destroy$ = new Subject<void>();
   private error: string | null = null;
 
-  latestChart = this.radioChartService.latestWeeklyChart.asReadonly();
+  latestChart = this.radioChartService.weeklyChart.asReadonly();
   latestChartText = this.radioChartService.latestWeeklyChartText.asReadonly();
   loading = signal<boolean>(false);
 
-  constructor() {
-    effect(() => {
-      // this.debugLogger.log(this.latestChart());
-    });
-  }
-
   ngOnInit(): void {
-    this.getLatestChartNumber();
+    this.getLatestChart();
   }
 
   ngOnDestroy(): void {
@@ -55,21 +44,36 @@ export class WeeklyComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  getLatestChartNumber(): void {
+  getLatestChart(): void {
     this.loading.set(true);
 
     this.radioChartService
-      .getLatestChart()
+      .getLatestChartNumber()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (chartNumber) => {
+          this.loadChart(chartNumber);
+        },
+      });
+  }
+
+  private loadChart(chartNumber: number): void {
+    this.radioChartService
+      .getChartByNumber(chartNumber)
       .pipe(
         takeUntil(this.destroy$),
         finalize(() => this.loading.set(false)),
       )
       .subscribe({
-        next: (data) => {
-          this.radioChartService.latestWeeklyChartText.set(data);
+        next: () => {
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Success',
+            detail: 'Chart fetched!',
+          });
         },
         error: (err) => {
-          this.error = `Failed to load available charts: ${err.message}`;
+          this.error = `Failed to load chart ${chartNumber}: ${err.message}`;
 
           this.messageService.add({
             severity: 'error',
