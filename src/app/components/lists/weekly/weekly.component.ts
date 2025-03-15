@@ -5,8 +5,7 @@ import { MessageModule } from 'primeng/message';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { ToastModule } from 'primeng/toast';
 import { finalize, Subject, takeUntil } from 'rxjs';
-import { DebugLoggerService } from '../../../services/debug-logger.service';
-import { RadioChartService } from '../../../services/radio-chart.service';
+import { RadioChartService } from 'src/app/services/radio-chart.service';
 import { ChartSwitcherComponent } from '../partials/chart-switcher/chart-switcher.component';
 import { NumberedTextAreaComponent } from '../partials/numbered-text-area/numbered-text-area.component';
 
@@ -25,7 +24,6 @@ import { NumberedTextAreaComponent } from '../partials/numbered-text-area/number
   providers: [MessageService],
 })
 export class WeeklyComponent implements OnInit, OnDestroy {
-  private readonly debugLogger = inject(DebugLoggerService);
   private readonly messageService = inject(MessageService);
   private readonly radioChartService = inject(RadioChartService);
   private readonly destroy$ = new Subject<void>();
