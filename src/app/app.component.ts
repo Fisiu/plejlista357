@@ -15,7 +15,8 @@ import { InputTextModule } from 'primeng/inputtext';
 import { MessageModule } from 'primeng/message';
 import { ToggleButtonModule } from 'primeng/togglebutton';
 import { filter, Subject, takeUntil } from 'rxjs';
-import { SharedModule } from './components/shared/shared.module';
+import { FooterComponent } from './components/shared/footer/footer.component';
+import { HeaderComponent } from './components/shared/header/header.component';
 
 @Component({
   selector: 'app-root',
@@ -28,7 +29,8 @@ import { SharedModule } from './components/shared/shared.module';
     FormsModule,
     ToggleButtonModule,
     FluidModule,
-    SharedModule,
+    HeaderComponent,
+    FooterComponent,
   ],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',

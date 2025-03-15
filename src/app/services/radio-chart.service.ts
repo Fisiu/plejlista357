@@ -1,6 +1,6 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { inject, Injectable, signal } from '@angular/core';
-import { catchError, delay, map, Observable, tap, throwError } from 'rxjs';
+import { catchError, map, Observable, tap, throwError } from 'rxjs';
 import { Chart, ChartSummary } from './radio-chart.model';
 
 @Injectable({
@@ -15,11 +15,26 @@ export class RadioChartService {
   weeklyChart = signal<Chart | undefined>(undefined);
   latestWeeklyChartText = signal<string[]>([]);
 
+  // Persistent chart cache - charts never change once published
+  private chartCache = new Map<number, Chart>();
+  private chartSummariesCache: ChartSummary[] | null = null;
+
   /**
    * Retrieves the chart number for the latest chart.
    * @returns {Observable<number>} - An Observable of a number representing the chart number.
    */
   getLatestChartNumber(): Observable<number> {
+    // If we have summaries cache, use it
+    if (this.chartSummariesCache) {
+      return new Observable<number>((observer) => {
+        const num = +this.chartSummariesCache![0]?.no;
+        this.latestWeeklyChartNumber.set(num);
+        observer.next(num);
+        observer.complete();
+      });
+    }
+
+    // No cache, fetch from API
     return this.getAllChartSummaries().pipe(
       catchError(this.handleError),
       map((response: ChartSummary[]) => +response[0]?.no),
@@ -33,27 +48,51 @@ export class RadioChartService {
    * @returns {Observable<Chart>} - An Observable of type Chart that contains information about the requested chart.
    */
   getChartByNumber(chartNumber: number): Observable<Chart> {
+    // Check if we have this chart in cache - it never expires!
+    if (this.chartCache.has(chartNumber)) {
+      return new Observable<Chart>((observer) => {
+        const cachedChart = this.chartCache.get(chartNumber)!;
+        this.updateChartSignals(cachedChart);
+        observer.next(cachedChart);
+        observer.complete();
+      });
+    }
+
+    // No cache hit, fetch from API
     const url = `${this.baseUrl}/lista/${chartNumber}`;
     return this.http.get<Chart>(url).pipe(
       catchError(this.handleError),
       tap((response) => {
-        const chart = response.results.mainChart.items
-          .map((item) => `${item.artist} - ${item.name}`)
-          .reverse();
-        this.latestWeeklyChartText.set(chart);
+        // Cache the result permanently
+        this.chartCache.set(chartNumber, response);
+        this.updateChartSignals(response);
       }),
-      tap((response) => this.weeklyChart.set(response)),
     );
   }
+
   /**
    * Retrieves all available chart summaries
    * @returns {Observable<ChartSummary[]} - Observable of ChartSummary array
    */
   private getAllChartSummaries(): Observable<ChartSummary[]> {
     const url = `${this.baseUrl}/lista/all`;
-    return this.http
-      .get<ChartSummary[]>(url)
-      .pipe(delay(2000), catchError(this.handleError));
+    return this.http.get<ChartSummary[]>(url).pipe(
+      catchError(this.handleError),
+      tap((summaries) => {
+        this.chartSummariesCache = summaries;
+      }),
+    );
+  }
+
+  /**
+   * Update signals from chart data
+   */
+  private updateChartSignals(chart: Chart): void {
+    const chartItems = chart.results.mainChart.items
+      .map((item) => `${item.artist} - ${item.name}`)
+      .reverse();
+    this.latestWeeklyChartText.set(chartItems);
+    this.weeklyChart.set(chart);
   }
 
   /**
