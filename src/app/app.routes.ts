@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { CallbackComponent } from './components/callback/callback.component';
 import { HelloComponent } from './components/hello/hello.component';
 import { NotFoundComponent } from './components/not-found/not-found.component';
 
@@ -9,6 +10,7 @@ export const routes: Routes = [
     pathMatch: 'full',
     component: HelloComponent,
   },
+  { path: 'callback', component: CallbackComponent },
   {
     path: 'weekly',
     title: 'Lista',

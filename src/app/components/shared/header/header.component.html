@@ -52,6 +52,8 @@
   pStyleClass="@next"
   enterClass="hidden"
   leaveToClass="hidden"
+  [hideOnOutsideClick]="true"
+  [hideOnEscape]="true"
 >
   <i class="pi pi-bars !text-2xl"></i>
 </a>
@@ -102,17 +104,25 @@
   <div
     class="flex border-t lg:border-t-0 border-surface py-4 lg:py-0 mt-4 lg:mt-0 gap-2"
   >
+    <ng-container *ngIf="isAuthenticated; else loginButton">
+      <div class="user-info">
+        <p-chip [label]="userName()" [image]="avatar()" alt="Avatar image" />
+      </div>
+    </ng-container>
+    <ng-template #loginButton>
+      <button pButton pRipple [rounded]="true" (click)="login()" [text]="true">
+        Login
+      </button>
+    </ng-template>
+
     <button
+      *ngIf="isAuthenticated"
       pButton
       pRipple
-      routerLink="/auth/login"
       [rounded]="true"
-      [text]="true"
+      (click)="logout()"
     >
-      Login
-    </button>
-    <button pButton pRipple routerLink="/auth/login" [rounded]="true">
-      Register
+      Logout
     </button>
   </div>
 </div>
