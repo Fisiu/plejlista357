@@ -39,13 +39,18 @@ export class SpotifyService {
 
   // Handle the callback from Spotify and exchange the authorization code for an access token
   handleCallback(code: string) {
+    const redirectUri = encodeURIComponent(environment.redirectUrl);
     const callbackUrl = environment.lambdaUrl;
 
-    return this.http.get<LambdaResponse>(`${callbackUrl}?code=${code}`).pipe(
-      tap((response: LambdaResponse) => {
-        this.setTokens(response);
-      }),
-    );
+    return this.http
+      .get<LambdaResponse>(
+        `${callbackUrl}?code=${code}&redirect_uri=${redirectUri}`,
+      )
+      .pipe(
+        tap((response: LambdaResponse) => {
+          this.setTokens(response);
+        }),
+      );
   }
 
   // Store tokens in localStorage and update the BehaviorSubject
