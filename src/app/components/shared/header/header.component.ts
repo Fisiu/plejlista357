@@ -1,13 +1,13 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { RouterModule } from '@angular/router';
+import { UserProfile } from '@spotify/web-api-ts-sdk';
 import { AvatarModule } from 'primeng/avatar';
 import { ButtonModule } from 'primeng/button';
 import { ChipModule } from 'primeng/chip';
 import { RippleModule } from 'primeng/ripple';
 import { StyleClassModule } from 'primeng/styleclass';
 import { Subject, takeUntil } from 'rxjs';
-import { SpotifyProfile } from 'src/app/services/spotify-auth.model';
 import { SpotifyAuthService } from 'src/app/services/spotify-auth.service';
 
 @Component({
@@ -29,7 +29,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
   private readonly destroy$ = new Subject<void>();
 
   isAuthenticated = false;
-  profile?: SpotifyProfile;
+  profile?: UserProfile;
   userName = signal('');
   avatar = signal('/assets/images/spotify-user.svg');
 
@@ -67,12 +67,12 @@ export class HeaderComponent implements OnInit, OnDestroy {
 
   getProfile(): void {
     this.spotifyAuthService.getProfile().subscribe({
-      next: (profile: SpotifyProfile) => {
+      next: (profile: UserProfile) => {
         this.profile = profile;
         this.userName.set(profile.display_name);
         const firstImage = profile.images[0];
         if (firstImage) {
-          this.avatar.set(firstImage);
+          this.avatar.set(firstImage.url);
         }
       },
     });
