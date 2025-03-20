@@ -12,6 +12,7 @@ import {
   throwError,
 } from 'rxjs';
 import { environment } from 'src/environments/environment';
+import { SPOTIFY_CONSTANTS } from './../constants/spotify.constants';
 import { generateCodeChallenge, generateCodeVerifier } from './auth.utils';
 import { SpotifyProfile } from './spotify-auth.model';
 
@@ -25,22 +26,6 @@ export class SpotifyAuthService {
   );
   readonly accessToken$ = this.accessTokenSubject.asObservable();
 
-  private readonly STORAGE_KEY_TOKEN = 'spotify_token';
-  private readonly STORAGE_KEY_VERIFIER = 'spotify_code_verifier';
-
-  private readonly API_ENDPOINTS = {
-    TOKEN: 'https://accounts.spotify.com/api/token',
-    AUTHORIZE: 'https://accounts.spotify.com/authorize',
-    PROFILE: 'https://api.spotify.com/v1/me',
-  };
-
-  private readonly SCOPES = [
-    'user-read-private',
-    'user-read-email',
-    'playlist-modify-public',
-    'playlist-modify-private',
-  ];
-
   constructor() {
     this.initializeFromStorage();
   }
@@ -50,7 +35,7 @@ export class SpotifyAuthService {
    */
   async login(): Promise<void> {
     const codeVerifier = generateCodeVerifier();
-    localStorage.setItem(this.STORAGE_KEY_VERIFIER, codeVerifier);
+    localStorage.setItem(SPOTIFY_CONSTANTS.STORAGE.KEY_VERIFIER, codeVerifier);
 
     const codeChallenge = await generateCodeChallenge(codeVerifier);
     const authUrl = this.getAuthUrl(codeChallenge);
@@ -61,7 +46,7 @@ export class SpotifyAuthService {
    * Logs out the user by clearing tokens and resetting state
    */
   logout() {
-    localStorage.removeItem(this.STORAGE_KEY_TOKEN);
+    localStorage.removeItem(SPOTIFY_CONSTANTS.STORAGE.KEY_TOKEN);
     this.accessTokenSubject.next(null);
   }
 
@@ -71,7 +56,9 @@ export class SpotifyAuthService {
    * @returns An Observable of the token response
    */
   handleCallback(code: string): Observable<AccessToken> {
-    const codeVerifier = localStorage.getItem(this.STORAGE_KEY_VERIFIER);
+    const codeVerifier = localStorage.getItem(
+      SPOTIFY_CONSTANTS.STORAGE.KEY_VERIFIER,
+    );
 
     if (!codeVerifier) {
       return throwError(() => new Error('Code verifier not found'));
@@ -86,11 +73,15 @@ export class SpotifyAuthService {
     });
 
     return this.http
-      .post<AccessToken>(this.API_ENDPOINTS.TOKEN, payload.toString(), {
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
+      .post<AccessToken>(
+        SPOTIFY_CONSTANTS.API_ENDPOINTS.TOKEN,
+        payload.toString(),
+        {
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
         },
-      })
+      )
       .pipe(
         tap((response: AccessToken) => {
           this.setTokens(response);
@@ -115,9 +106,12 @@ export class SpotifyAuthService {
         if (!token) {
           return throwError(() => new Error('No access token available'));
         }
-        return this.http.get<SpotifyProfile>(this.API_ENDPOINTS.PROFILE, {
-          headers: this.getAuthHeaders(token.access_token),
-        });
+        return this.http.get<SpotifyProfile>(
+          SPOTIFY_CONSTANTS.API_ENDPOINTS.PROFILE,
+          {
+            headers: this.getAuthHeaders(token.access_token),
+          },
+        );
       }),
       catchError((error) => {
         console.error('Error fetching profile:', error);
@@ -155,13 +149,13 @@ export class SpotifyAuthService {
       client_id: environment.spotifyClientId,
       response_type: 'code',
       redirect_uri: environment.redirectUrl,
-      scope: this.SCOPES.join(' '),
+      scope: SPOTIFY_CONSTANTS.SCOPES.join(' '),
       state: window.location.pathname,
       code_challenge_method: 'S256',
       code_challenge: codeChallenge,
     });
 
-    return `${this.API_ENDPOINTS.AUTHORIZE}?${params.toString()}`;
+    return `${SPOTIFY_CONSTANTS.API_ENDPOINTS.AUTHORIZE}?${params.toString()}`;
   }
 
   /**
@@ -171,7 +165,10 @@ export class SpotifyAuthService {
   private setTokens(response: AccessToken): void {
     console.log(JSON.stringify(response));
 
-    localStorage.setItem(this.STORAGE_KEY_TOKEN, JSON.stringify(response));
+    localStorage.setItem(
+      SPOTIFY_CONSTANTS.STORAGE.KEY_TOKEN,
+      JSON.stringify(response),
+    );
 
     this.accessTokenSubject.next(response);
   }
@@ -181,7 +178,7 @@ export class SpotifyAuthService {
    */
   private initializeFromStorage(): void {
     const storedToken = this.getItemAsObject<AccessToken>(
-      this.STORAGE_KEY_TOKEN,
+      SPOTIFY_CONSTANTS.STORAGE.KEY_TOKEN,
     );
     if (storedToken) {
       this.accessTokenSubject.next(storedToken);
