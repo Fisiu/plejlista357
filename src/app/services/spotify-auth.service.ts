@@ -1,5 +1,6 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
+import { AccessToken } from '@spotify/web-api-ts-sdk';
 import {
   BehaviorSubject,
   catchError,
@@ -12,26 +13,20 @@ import {
 } from 'rxjs';
 import { environment } from 'src/environments/environment';
 import { generateCodeChallenge, generateCodeVerifier } from './auth.utils';
-import {
-  SpotifyTokenResponse as SpotifyAuthResponse,
-  SpotifyProfile,
-} from './spotify-auth.model';
+import { SpotifyProfile } from './spotify-auth.model';
 
 @Injectable({
   providedIn: 'root',
 })
 export class SpotifyAuthService {
   private readonly http = inject(HttpClient);
-  private readonly accessTokenSubject = new BehaviorSubject<string | null>(
+  private readonly accessTokenSubject = new BehaviorSubject<AccessToken | null>(
     null,
   );
   readonly accessToken$ = this.accessTokenSubject.asObservable();
 
-  private readonly STORAGE_KEYS = {
-    ACCESS_TOKEN: 'spotify_access_token',
-    REFRESH_TOKEN: 'spotify_refresh_token',
-    CODE_VERIFIER: 'spotify_code_verifier',
-  };
+  private readonly STORAGE_KEY_TOKEN = 'spotify_token';
+  private readonly STORAGE_KEY_VERIFIER = 'spotify_code_verifier';
 
   private readonly API_ENDPOINTS = {
     TOKEN: 'https://accounts.spotify.com/api/token',
@@ -55,7 +50,7 @@ export class SpotifyAuthService {
    */
   async login(): Promise<void> {
     const codeVerifier = generateCodeVerifier();
-    localStorage.setItem(this.STORAGE_KEYS.CODE_VERIFIER, codeVerifier);
+    localStorage.setItem(this.STORAGE_KEY_VERIFIER, codeVerifier);
 
     const codeChallenge = await generateCodeChallenge(codeVerifier);
     const authUrl = this.getAuthUrl(codeChallenge);
@@ -66,9 +61,7 @@ export class SpotifyAuthService {
    * Logs out the user by clearing tokens and resetting state
    */
   logout() {
-    Object.values(this.STORAGE_KEYS).forEach((key) =>
-      localStorage.removeItem(key),
-    );
+    localStorage.removeItem(this.STORAGE_KEY_TOKEN);
     this.accessTokenSubject.next(null);
   }
 
@@ -77,8 +70,8 @@ export class SpotifyAuthService {
    * @param code The authorization code returned from Spotify
    * @returns An Observable of the token response
    */
-  handleCallback(code: string): Observable<SpotifyAuthResponse> {
-    const codeVerifier = localStorage.getItem(this.STORAGE_KEYS.CODE_VERIFIER);
+  handleCallback(code: string): Observable<AccessToken> {
+    const codeVerifier = localStorage.getItem(this.STORAGE_KEY_VERIFIER);
 
     if (!codeVerifier) {
       return throwError(() => new Error('Code verifier not found'));
@@ -93,13 +86,13 @@ export class SpotifyAuthService {
     });
 
     return this.http
-      .post<SpotifyAuthResponse>(this.API_ENDPOINTS.TOKEN, payload.toString(), {
+      .post<AccessToken>(this.API_ENDPOINTS.TOKEN, payload.toString(), {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
       })
       .pipe(
-        tap((response: SpotifyAuthResponse) => {
+        tap((response: AccessToken) => {
           this.setTokens(response);
         }),
         catchError((error) => {
@@ -123,7 +116,7 @@ export class SpotifyAuthService {
           return throwError(() => new Error('No access token available'));
         }
         return this.http.get<SpotifyProfile>(this.API_ENDPOINTS.PROFILE, {
-          headers: this.getAuthHeaders(token),
+          headers: this.getAuthHeaders(token.access_token),
         });
       }),
       catchError((error) => {
@@ -175,27 +168,47 @@ export class SpotifyAuthService {
    * Stores tokens in localStorage and updates the BehaviorSubject
    * @param response The token response from Spotify
    */
-  private setTokens(response: SpotifyAuthResponse): void {
-    localStorage.setItem(this.STORAGE_KEYS.ACCESS_TOKEN, response.access_token);
+  private setTokens(response: AccessToken): void {
+    console.log(JSON.stringify(response));
 
-    if (response.refresh_token) {
-      localStorage.setItem(
-        this.STORAGE_KEYS.REFRESH_TOKEN,
-        response.refresh_token,
-      );
-    }
+    localStorage.setItem(this.STORAGE_KEY_TOKEN, JSON.stringify(response));
 
-    this.accessTokenSubject.next(response.access_token);
+    this.accessTokenSubject.next(response);
   }
 
   /**
    * Initializes the service from localStorage
    */
   private initializeFromStorage(): void {
-    const storedToken = localStorage.getItem(this.STORAGE_KEYS.ACCESS_TOKEN);
+    const storedToken = this.getItemAsObject<AccessToken>(
+      this.STORAGE_KEY_TOKEN,
+    );
     if (storedToken) {
       this.accessTokenSubject.next(storedToken);
     }
+  }
+
+  /**
+   * Retrieves an item from `localStorage` and parses it as an object of type T.
+   *
+   * @template T - The type of the object to parse from localStorage.
+   * @param key - The key under which the item is stored in localStorage.
+   * @returns The parsed object if successful, or null if the item does not exist or cannot be parsed.
+   */
+  getItemAsObject<T>(key: string): T | null {
+    const item = localStorage.getItem(key);
+    if (item) {
+      try {
+        return JSON.parse(item) as T;
+      } catch (error) {
+        console.error(
+          `Error parsing localStorage item with key "${key}":`,
+          error,
+        );
+        return null;
+      }
+    }
+    return null;
   }
 
   // /**
