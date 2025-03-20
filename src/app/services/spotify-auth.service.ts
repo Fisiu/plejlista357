@@ -14,6 +14,7 @@ import {
 import { environment } from 'src/environments/environment';
 import { SPOTIFY_CONSTANTS } from './../constants/spotify.constants';
 import { generateCodeChallenge, generateCodeVerifier } from './auth.utils';
+import { LocalStorageService } from './local-storage.service';
 import { SpotifyProfile } from './spotify-auth.model';
 
 @Injectable({
@@ -21,6 +22,7 @@ import { SpotifyProfile } from './spotify-auth.model';
 })
 export class SpotifyAuthService {
   private readonly http = inject(HttpClient);
+  private readonly localStorageService = inject(LocalStorageService);
   private readonly accessTokenSubject = new BehaviorSubject<AccessToken | null>(
     null,
   );
@@ -177,35 +179,12 @@ export class SpotifyAuthService {
    * Initializes the service from localStorage
    */
   private initializeFromStorage(): void {
-    const storedToken = this.getItemAsObject<AccessToken>(
+    const storedToken = this.localStorageService.getItemAsObject<AccessToken>(
       SPOTIFY_CONSTANTS.STORAGE.KEY_TOKEN,
     );
     if (storedToken) {
       this.accessTokenSubject.next(storedToken);
     }
-  }
-
-  /**
-   * Retrieves an item from `localStorage` and parses it as an object of type T.
-   *
-   * @template T - The type of the object to parse from localStorage.
-   * @param key - The key under which the item is stored in localStorage.
-   * @returns The parsed object if successful, or null if the item does not exist or cannot be parsed.
-   */
-  getItemAsObject<T>(key: string): T | null {
-    const item = localStorage.getItem(key);
-    if (item) {
-      try {
-        return JSON.parse(item) as T;
-      } catch (error) {
-        console.error(
-          `Error parsing localStorage item with key "${key}":`,
-          error,
-        );
-        return null;
-      }
-    }
-    return null;
   }
 
   // /**
