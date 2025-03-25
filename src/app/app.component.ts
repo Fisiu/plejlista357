@@ -1,12 +1,5 @@
 import { CommonModule } from '@angular/common';
-import {
-  Component,
-  computed,
-  inject,
-  OnDestroy,
-  Renderer2,
-  signal,
-} from '@angular/core';
+import { Component, computed, inject, OnDestroy, Renderer2, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
@@ -43,9 +36,7 @@ export class AppComponent implements OnDestroy {
   private currentRoute = '';
 
   isDarkModeEnabled = signal(false);
-  darkModeIcon = computed(() =>
-    this.isDarkModeEnabled() ? 'pi pi-sun' : 'pi pi-moon',
-  );
+  darkModeIcon = computed(() => (this.isDarkModeEnabled() ? 'pi pi-sun' : 'pi pi-moon'));
 
   title = 'Plejlista357';
   text = '';

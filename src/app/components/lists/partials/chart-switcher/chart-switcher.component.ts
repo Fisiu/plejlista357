@@ -19,11 +19,8 @@ export class ChartSwitcherComponent implements OnDestroy {
 
   loading = false;
 
-  chartNumber = computed(() =>
-    this.radioChartService.latestWeeklyChartNumber(),
-  );
-  latestChartNumber =
-    this.radioChartService.latestWeeklyChartNumber.asReadonly();
+  chartNumber = computed(() => this.radioChartService.latestWeeklyChartNumber());
+  latestChartNumber = this.radioChartService.latestWeeklyChartNumber.asReadonly();
 
   ngOnDestroy(): void {
     this.destroy$.next();

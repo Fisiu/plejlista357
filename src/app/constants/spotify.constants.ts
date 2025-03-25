@@ -8,10 +8,5 @@ export const SPOTIFY_CONSTANTS = {
     AUTHORIZE: 'https://accounts.spotify.com/authorize',
     PROFILE: 'https://api.spotify.com/v1/me',
   },
-  SCOPES: [
-    'user-read-private',
-    'user-read-email',
-    'playlist-modify-public',
-    'playlist-modify-private',
-  ],
+  SCOPES: ['user-read-private', 'user-read-email', 'playlist-modify-public', 'playlist-modify-private'],
 };

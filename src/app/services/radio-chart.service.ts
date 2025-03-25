@@ -88,9 +88,7 @@ export class RadioChartService {
    * Update signals from chart data
    */
   private updateChartSignals(chart: Chart): void {
-    const chartItems = chart.results.mainChart.items
-      .map((item) => `${item.artist} - ${item.name}`)
-      .reverse();
+    const chartItems = chart.results.mainChart.items.map((item) => `${item.artist} - ${item.name}`).reverse();
     this.latestWeeklyChartText.set(chartItems);
     this.weeklyChart.set(chart);
   }

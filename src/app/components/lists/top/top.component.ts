@@ -4,8 +4,6 @@ import { Component } from '@angular/core';
   selector: 'app-top',
   imports: [],
   templateUrl: './top.component.html',
-  styleUrl: './top.component.scss'
+  styleUrl: './top.component.scss',
 })
-export class TopComponent {
-
-}
+export class TopComponent {}

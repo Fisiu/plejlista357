@@ -1,10 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 
 import { provideHttpClient } from '@angular/common/http';
-import {
-  HttpTestingController,
-  provideHttpClientTesting,
-} from '@angular/common/http/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { Chart, ChartSummary } from './radio-chart.model';
 import { RadioChartService } from './radio-chart.service';
 
@@ -15,11 +12,7 @@ describe('RadioChartService', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       imports: [],
-      providers: [
-        provideHttpClient(),
-        provideHttpClientTesting(),
-        RadioChartService,
-      ],
+      providers: [provideHttpClient(), provideHttpClientTesting(), RadioChartService],
     });
     service = TestBed.inject(RadioChartService);
     httpMock = TestBed.inject(HttpTestingController);
@@ -126,15 +119,10 @@ describe('RadioChartService', () => {
       service.getChartByNumber(chartNumber).subscribe((response) => {
         expect(response).toEqual(mockResponse);
         expect(service.weeklyChart()).toEqual(mockResponse);
-        expect(service.latestWeeklyChartText()).toEqual([
-          'Artist2 - Song2',
-          'Artist1 - Song1',
-        ]);
+        expect(service.latestWeeklyChartText()).toEqual(['Artist2 - Song2', 'Artist1 - Song1']);
       });
 
-      const req = httpMock.expectOne(
-        `${service['baseUrl']}/lista/${chartNumber}`,
-      );
+      const req = httpMock.expectOne(`${service['baseUrl']}/lista/${chartNumber}`);
       expect(req.request.method).toBe('GET');
       req.flush(mockResponse);
     });
