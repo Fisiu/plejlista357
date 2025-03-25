@@ -1,20 +1,7 @@
-import {
-  HttpClient,
-  HttpErrorResponse,
-  HttpHeaders,
-} from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { AccessToken, UserProfile } from '@spotify/web-api-ts-sdk';
-import {
-  BehaviorSubject,
-  catchError,
-  map,
-  Observable,
-  switchMap,
-  take,
-  tap,
-  throwError,
-} from 'rxjs';
+import { BehaviorSubject, catchError, map, Observable, switchMap, take, tap, throwError } from 'rxjs';
 import { environment } from 'src/environments/environment';
 import { SPOTIFY_CONSTANTS } from './../constants/spotify.constants';
 import { generateCodeChallenge, generateCodeVerifier } from './auth.utils';
@@ -26,29 +13,34 @@ import { LocalStorageService } from './local-storage.service';
 export class SpotifyAuthService {
   private readonly http = inject(HttpClient);
   private readonly localStorageService = inject(LocalStorageService);
-  private readonly accessTokenSubject = new BehaviorSubject<AccessToken | null>(
-    null,
-  );
+  private readonly accessTokenSubject = new BehaviorSubject<AccessToken | null>(null);
   readonly accessToken$ = this.accessTokenSubject.asObservable();
 
   constructor() {
-    this.initializeFromStorage();
+    this.loadInitialToken();
   }
 
   /**
-   * Initiates the Spotify OAuth flow
+   * Retrieves the current Spotify access token.
+   * @returns The access token if available, otherwise undefined.
+   */
+  getAccessToken(): string | undefined {
+    return this.accessTokenSubject.value?.access_token;
+  }
+
+  /**
+   * Initiates the Spotify OAuth 2.0 authorization flow using PKCE.
+   * Redirects the user to the Spotify authorization page.
    */
   async login(): Promise<void> {
     const codeVerifier = generateCodeVerifier();
     localStorage.setItem(SPOTIFY_CONSTANTS.STORAGE.KEY_VERIFIER, codeVerifier);
-
     const codeChallenge = await generateCodeChallenge(codeVerifier);
-    const authUrl = this.getAuthUrl(codeChallenge);
-    window.location.href = authUrl;
+    window.location.href = this.buildAuthUrl(codeChallenge);
   }
 
   /**
-   * Logs out the user by clearing tokens and resetting state
+   * Logs out the current user by clearing stored tokens and resetting authentication state.
    */
   logout() {
     localStorage.removeItem(SPOTIFY_CONSTANTS.STORAGE.KEY_TOKEN);
@@ -56,15 +48,13 @@ export class SpotifyAuthService {
   }
 
   /**
-   * Handles the callback from Spotify and exchanges the authorization code for tokens
-   * @param code The authorization code returned from Spotify
-   * @returns An Observable of the token response
+   * Exchanges an authorization code for an access token after Spotify redirect.
+   * @param code The authorization code received from Spotify.
+   * @returns An Observable emitting the access token response.
+   * @throws Error if the code verifier is missing or the token request fails.
    */
   handleCallback(code: string): Observable<AccessToken> {
-    const codeVerifier = localStorage.getItem(
-      SPOTIFY_CONSTANTS.STORAGE.KEY_VERIFIER,
-    );
-
+    const codeVerifier = localStorage.getItem(SPOTIFY_CONSTANTS.STORAGE.KEY_VERIFIER);
     if (!codeVerifier) {
       return throwError(() => new Error('Code verifier not found'));
     }
@@ -77,76 +67,73 @@ export class SpotifyAuthService {
       code_verifier: codeVerifier,
     });
 
-    return this.http
-      .post<AccessToken>(
-        SPOTIFY_CONSTANTS.API_ENDPOINTS.TOKEN,
-        payload.toString(),
-        {
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-        },
-      )
-      .pipe(
-        tap((response: AccessToken) => {
-          this.setTokens(response);
-        }),
-        catchError((error) => {
-          console.error('Error exchanging code for tokens:', error);
-          return throwError(
-            () => new Error('Failed to exchange authorization code for tokens'),
-          );
-        }),
-      );
-  }
-
-  /**
-   * Fetches the user's Spotify profile
-   * @returns An Observable of the user's profile
-   */
-  getProfile(): Observable<UserProfile> {
-    return this.accessToken$.pipe(
-      take(1),
-      switchMap((token) => {
-        if (!token) {
-          return throwError(() => new Error('No access token available'));
-        }
-        return this.http.get<UserProfile>(
-          SPOTIFY_CONSTANTS.API_ENDPOINTS.PROFILE,
-          {
-            headers: this.getAuthHeaders(token.access_token),
-          },
-        );
-      }),
-      catchError((error) => this.handleError('getProfile', error)),
+    return this.requestToken(payload).pipe(
+      tap((token) => this.storeToken(token)),
+      catchError((error) => this.handleTokenError('callback', error)),
     );
   }
 
   /**
-   * Checks if the user is currently authenticated
-   * @returns An Observable that emits true if authenticated, false otherwise
+   * Fetches the authenticated user's Spotify profile.
+   * Automatically refreshes the token if a 401 error occurs.
+   * @returns An Observable emitting the user's profile data.
+   * @throws Error if no access token is available or the request fails.
+   */
+  getProfile(): Observable<UserProfile> {
+    return this.accessToken$.pipe(
+      take(1),
+      switchMap((token) =>
+        token
+          ? this.http.get<UserProfile>(SPOTIFY_CONSTANTS.API_ENDPOINTS.PROFILE, {
+              headers: this.getAuthHeaders(token.access_token),
+            })
+          : throwError(() => new Error('No access token available')),
+      ),
+      catchError((error: HttpErrorResponse) =>
+        error.status === 401
+          ? this.refreshToken().pipe(switchMap(() => this.getProfile()))
+          : this.handleApiError('getProfile', error),
+      ),
+    );
+  }
+
+  /**
+   * Checks if the user is currently authenticated.
+   * @returns An Observable emitting true if an access token exists, false otherwise.
    */
   isAuthenticated(): Observable<boolean> {
     return this.accessToken$.pipe(map((token) => !!token));
   }
 
   /**
-   * Gets authentication headers with the access token
-   * @param token The access token to use
-   * @returns HTTP headers with authorization
+   * Refreshes the access token using the stored refresh token.
+   * @returns An Observable emitting the new access token response.
+   * @throws Error if no refresh token is available or the refresh fails.
    */
-  private getAuthHeaders(token: string): HttpHeaders {
-    return new HttpHeaders({
-      Authorization: `Bearer ${token}`,
+  refreshToken(): Observable<AccessToken> {
+    const storedToken = this.getStoredToken();
+    if (!storedToken?.refresh_token) {
+      return throwError(() => new Error('No refresh token available'));
+    }
+
+    const payload = this.buildTokenPayload({
+      grant_type: 'refresh_token',
+      refresh_token: storedToken.refresh_token,
     });
+
+    return this.requestToken(payload).pipe(
+      tap((token) => this.updateRefreshToken(token, storedToken)),
+      catchError((error) => this.handleTokenError('refreshToken', error)),
+    );
   }
 
   /**
-   * Constructs the Spotify authorization URL
-   * @param codeChallenge The PKCE code challenge
-   * @returns The fully formed authorization URL
+   * Builds the Spotify authorization URL for PKCE flow.
+   * @param codeChallenge The PKCE code challenge.
+   * @returns The fully constructed authorization URL.
+   * @private
    */
-  private getAuthUrl(codeChallenge: string): string {
+  private buildAuthUrl(codeChallenge: string): string {
     const params = new URLSearchParams({
       client_id: environment.spotifyClientId,
       response_type: 'code',
@@ -156,94 +143,113 @@ export class SpotifyAuthService {
       code_challenge_method: 'S256',
       code_challenge: codeChallenge,
     });
-
     return `${SPOTIFY_CONSTANTS.API_ENDPOINTS.AUTHORIZE}?${params.toString()}`;
   }
 
   /**
-   * Stores tokens in localStorage and updates the BehaviorSubject
-   * @param response The token response from Spotify
+   * Constructs a token request payload.
+   * @param params Additional parameters specific to the grant type.
+   * @returns A URLSearchParams object with the payload.
+   * @private
    */
-  private setTokens(response: AccessToken): void {
-    localStorage.setItem(
-      SPOTIFY_CONSTANTS.STORAGE.KEY_TOKEN,
-      JSON.stringify(response),
-    );
-
-    this.accessTokenSubject.next(response);
+  private buildTokenPayload(params: Record<string, string>): URLSearchParams {
+    return new URLSearchParams({
+      client_id: environment.spotifyClientId,
+      ...params,
+    });
   }
 
   /**
-   * Initializes the service from localStorage
+   * Sends a token request to Spotify's token endpoint.
+   * @param payload The request payload.
+   * @returns An Observable emitting the token response.
+   * @private
    */
-  private initializeFromStorage(): void {
-    const storedToken = this.localStorageService.getItemAsObject<AccessToken>(
-      SPOTIFY_CONSTANTS.STORAGE.KEY_TOKEN,
-    );
+  private requestToken(payload: URLSearchParams): Observable<AccessToken> {
+    return this.http.post<AccessToken>(SPOTIFY_CONSTANTS.API_ENDPOINTS.TOKEN, payload.toString(), {
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    });
+  }
+
+  /**
+   * Creates HTTP headers with the Spotify access token.
+   * @param token The access token.
+   * @returns HttpHeaders with Authorization set.
+   * @private
+   */
+  getAuthHeaders(token: string): HttpHeaders {
+    return new HttpHeaders({
+      Authorization: `Bearer ${token}`,
+    });
+  }
+
+  /**
+   * Stores a token response in local storage and updates the token subject.
+   * @param token The token response to store.
+   * @private
+   */
+  private storeToken(token: AccessToken): void {
+    localStorage.setItem(SPOTIFY_CONSTANTS.STORAGE.KEY_TOKEN, JSON.stringify(token));
+    this.accessTokenSubject.next(token);
+  }
+
+  /**
+   * Updates the stored token with a new refresh token if provided.
+   * @param newToken The new token response.
+   * @param storedToken The existing stored token.
+   * @private
+   */
+  private updateRefreshToken(newToken: AccessToken, storedToken: AccessToken): void {
+    if (newToken.refresh_token) {
+      storedToken.refresh_token = newToken.refresh_token;
+      this.storeToken(storedToken);
+    }
+  }
+
+  /**
+   * Retrieves the stored token from local storage.
+   * @returns The stored AccessToken or null if not found.
+   * @private
+   */
+  private getStoredToken(): AccessToken | null {
+    return this.localStorageService.getItemAsObject<AccessToken>(SPOTIFY_CONSTANTS.STORAGE.KEY_TOKEN);
+  }
+
+  /**
+   * Loads the initial token from local storage on service initialization.
+   * @private
+   */
+  private loadInitialToken(): void {
+    const storedToken = this.getStoredToken();
     if (storedToken) {
       this.accessTokenSubject.next(storedToken);
     }
   }
 
   /**
-   * Refreshes the access token using the refresh token
+   * Handles errors from token-related operations.
+   * @param operation The name of the operation that failed.
+   * @param error The error object.
+   * @returns An Observable that throws an error.
+   * @private
    */
-  refreshToken(): Observable<AccessToken> {
-    const storedToken = this.localStorageService.getItemAsObject<AccessToken>(
-      SPOTIFY_CONSTANTS.STORAGE.KEY_TOKEN,
-    );
-
-    if (!storedToken || !storedToken.refresh_token) {
-      return throwError(
-        () => new Error('No refresh token available to refresh access token'),
-      );
-    }
-
-    const payload = new URLSearchParams({
-      client_id: environment.spotifyClientId,
-      grant_type: 'refresh_token',
-      refresh_token: storedToken.refresh_token,
-    });
-
-    return this.http
-      .post<AccessToken>(
-        SPOTIFY_CONSTANTS.API_ENDPOINTS.TOKEN,
-        payload.toString(),
-        {
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-        },
-      )
-      .pipe(
-        tap((response: AccessToken) => {
-          if (response.refresh_token) {
-            storedToken.refresh_token = response.refresh_token;
-            this.setTokens(storedToken);
-          }
-        }),
-        catchError((error) => {
-          console.error('Error refreshing access token:', error);
-          return throwError(() => new Error('Failed to refresh access token'));
-        }),
-      );
+  private handleTokenError(operation: string, error: unknown): Observable<never> {
+    console.error(`Error in ${operation}:`, error);
+    return throwError(() => new Error(`Failed to ${operation}`));
   }
 
   /**
-   * Error handler for API calls
-   * @param operation Name of the operation that failed
-   * @param error Error object
+   * Handles errors from API calls, logging out on 400 errors.
+   * @param operation The name of the operation that failed.
+   * @param error The HTTP error response.
+   * @returns An Observable that throws an error.
+   * @private
    */
-  private handleError(
-    operation: string,
-    error: HttpErrorResponse,
-  ): Observable<never> {
+  private handleApiError(operation: string, error: HttpErrorResponse): Observable<never> {
     // If token expired, we could handle token refresh here
-    if (error.status === 401) {
-      // You could implement token refresh logic here or call your auth service
-      this.refreshToken().subscribe();
+    if (error.status === 400) {
+      this.logout();
     }
-
     return throwError(() => new Error(`${operation} failed: ${error.message}`));
   }
 }

@@ -12,15 +12,7 @@ import { SpotifyAuthService } from 'src/app/services/spotify-auth.service';
 
 @Component({
   selector: 'app-header',
-  imports: [
-    ButtonModule,
-    CommonModule,
-    RouterModule,
-    AvatarModule,
-    ChipModule,
-    StyleClassModule,
-    RippleModule,
-  ],
+  imports: [ButtonModule, CommonModule, RouterModule, AvatarModule, ChipModule, StyleClassModule, RippleModule],
   templateUrl: './header.component.html',
   styleUrl: './header.component.scss',
 })
@@ -34,14 +26,17 @@ export class HeaderComponent implements OnInit, OnDestroy {
   avatar = signal('/assets/images/spotify-user.svg');
 
   ngOnInit(): void {
-    // Check if the user is already logged in
+    this.checkAuthentication();
+  }
+
+  checkAuthentication(): void {
     this.spotifyAuthService
       .isAuthenticated()
       .pipe(takeUntil(this.destroy$))
-      .subscribe((isAuth) => {
-        this.isAuthenticated = isAuth;
+      .subscribe((authenticated) => {
+        this.isAuthenticated = authenticated;
 
-        if (isAuth) {
+        if (authenticated) {
           this.getProfile();
         }
       });
