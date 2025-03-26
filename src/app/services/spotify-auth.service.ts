@@ -44,6 +44,7 @@ export class SpotifyAuthService {
    */
   logout() {
     localStorage.removeItem(SPOTIFY_CONSTANTS.STORAGE.KEY_TOKEN);
+    localStorage.removeItem(SPOTIFY_CONSTANTS.STORAGE.KEY_VERIFIER);
     this.accessTokenSubject.next(null);
   }
 
@@ -69,7 +70,7 @@ export class SpotifyAuthService {
 
     return this.requestToken(payload).pipe(
       tap((token) => this.storeToken(token)),
-      catchError((error) => this.handleTokenError('callback', error)),
+      catchError((error) => this.handleError('callback', error)),
     );
   }
 
@@ -92,7 +93,7 @@ export class SpotifyAuthService {
       catchError((error: HttpErrorResponse) =>
         error.status === 401
           ? this.refreshToken().pipe(switchMap(() => this.getProfile()))
-          : this.handleApiError('getProfile', error),
+          : this.handleError('getProfile', error),
       ),
     );
   }
@@ -123,7 +124,7 @@ export class SpotifyAuthService {
 
     return this.requestToken(payload).pipe(
       tap((token) => this.updateRefreshToken(token, storedToken)),
-      catchError((error) => this.handleTokenError('refreshToken', error)),
+      catchError((error) => this.handleError('refreshToken', error)),
     );
   }
 
@@ -227,25 +228,13 @@ export class SpotifyAuthService {
   }
 
   /**
-   * Handles errors from token-related operations.
-   * @param operation The name of the operation that failed.
-   * @param error The error object.
-   * @returns An Observable that throws an error.
-   * @private
-   */
-  private handleTokenError(operation: string, error: unknown): Observable<never> {
-    console.error(`Error in ${operation}:`, error);
-    return throwError(() => new Error(`Failed to ${operation}`));
-  }
-
-  /**
    * Handles errors from API calls, logging out on 400 errors.
    * @param operation The name of the operation that failed.
    * @param error The HTTP error response.
    * @returns An Observable that throws an error.
    * @private
    */
-  private handleApiError(operation: string, error: HttpErrorResponse): Observable<never> {
+  private handleError(operation: string, error: HttpErrorResponse): Observable<never> {
     // If token expired, we could handle token refresh here
     if (error.status === 400) {
       this.logout();
