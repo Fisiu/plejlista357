@@ -70,6 +70,10 @@ export class HeaderComponent implements OnInit, OnDestroy {
           this.avatar.set(firstImage.url);
         }
       },
+      error: (error) => {
+        console.error('Error fetching profile:', error);
+        this.logout();
+      },
     });
   }
 }
