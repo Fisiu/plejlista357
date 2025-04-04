@@ -1,0 +1,16 @@
+<div class="flex w-full justify-end gap-4">
+  <p-button
+    type="button"
+    label="Create"
+    icon="pi pi-save"
+    severity="success"
+    (click)="onCreatePlaylist({ buttonType: 'Create', summary: 'Playlist created' })"
+  />
+  <p-button
+    type="button"
+    label="Cancel"
+    icon="pi pi-times"
+    severity="danger"
+    (click)="onCancelDialog({ buttonType: 'Cancel', summary: 'No Playlist Created' })"
+  />
+</div>

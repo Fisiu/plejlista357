@@ -1,12 +1,15 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { MessageService } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
+import { DialogService } from 'primeng/dynamicdialog';
 import { MessageModule } from 'primeng/message';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { ToastModule } from 'primeng/toast';
 import { finalize, Subject, takeUntil } from 'rxjs';
 import { RadioChartService } from 'src/app/services/radio-chart.service';
 import { ChartSwitcherComponent } from '../partials/chart-switcher/chart-switcher.component';
+import { CreateSpotifyPlaylistDialogComponent } from '../partials/create-spotify-playlist-dialog/create-spotify-playlist-dialog.component';
 import { NumberedTextAreaComponent } from '../partials/numbered-text-area/numbered-text-area.component';
 
 @Component({
@@ -18,14 +21,17 @@ import { NumberedTextAreaComponent } from '../partials/numbered-text-area/number
     NumberedTextAreaComponent,
     ProgressSpinnerModule,
     ChartSwitcherComponent,
+    ButtonModule,
+    CreateSpotifyPlaylistDialogComponent,
   ],
   templateUrl: './weekly.component.html',
   styleUrl: './weekly.component.scss',
-  providers: [MessageService],
+  providers: [MessageService, DialogService],
 })
 export class WeeklyComponent implements OnInit, OnDestroy {
   private readonly messageService = inject(MessageService);
   private readonly radioChartService = inject(RadioChartService);
+
   private readonly destroy$ = new Subject<void>();
   private error: string | null = null;
 
@@ -42,6 +48,9 @@ export class WeeklyComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
+  /**
+   * Fetches the latest chart number and loads the corresponding chart.
+   */
   getLatestChart(): void {
     this.loading.set(true);
 
@@ -55,6 +64,10 @@ export class WeeklyComponent implements OnInit, OnDestroy {
       });
   }
 
+  /**
+   * Loads the chart data for a given chart number, handling success and error states.
+   * @param chartNumber - The number of the chart to load.
+   */
   private loadChart(chartNumber: number): void {
     this.radioChartService
       .getChartByNumber(chartNumber)

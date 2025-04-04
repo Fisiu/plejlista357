@@ -13,6 +13,12 @@
         </div>
         <app-numbered-text-area [lines]="latestChartText()"></app-numbered-text-area>
       </div>
+      <div class="col-span-12 text-center">
+        <app-create-spotify-playlist-dialog
+          [latestChart]="latestChart()"
+          [latestChartText]="latestChartText()"
+        ></app-create-spotify-playlist-dialog>
+      </div>
     }
   </div>
 </div>

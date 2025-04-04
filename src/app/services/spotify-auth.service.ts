@@ -90,7 +90,7 @@ export class SpotifyAuthService {
             })
           : throwError(() => new Error('No access token available')),
       ),
-      catchError((error: HttpErrorResponse) =>
+      catchError((error) =>
         error.status === 401
           ? this.refreshToken().pipe(switchMap(() => this.getProfile()))
           : this.handleError('getProfile', error),
@@ -114,6 +114,7 @@ export class SpotifyAuthService {
   refreshToken(): Observable<AccessToken> {
     const storedToken = this.getStoredToken();
     if (!storedToken?.refresh_token) {
+      this.logout();
       return throwError(() => new Error('No refresh token available'));
     }
 

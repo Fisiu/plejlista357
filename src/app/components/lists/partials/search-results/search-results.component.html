@@ -1,0 +1,21 @@
+<div *ngIf="isLoading(); else results">
+  <div class="flex justify-center spinner-container">
+    <p-progress-spinner></p-progress-spinner>
+  </div>
+</div>
+
+<ng-template #results>
+  <p-table [value]="displayResults()" [size]="'small'">
+    <ng-template pTemplate="body" let-track>
+      <tr>
+        <td>
+          <img [src]="track.coverUrl" [alt]="track.name" width="32" style="vertical-align: middle" />
+          <!-- class="w-24 rounded" -->
+        </td>
+        <td>{{ track.position }}</td>
+        <td>{{ track.artist }}</td>
+        <td>{{ track.title }}</td>
+      </tr>
+    </ng-template>
+  </p-table>
+</ng-template>
