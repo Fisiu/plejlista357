@@ -1,9 +1,3 @@
-export interface ChartSummary {
-  no: string;
-  published_at: string;
-  published_at_date: string;
-}
-
 export interface Chart {
   results: Results;
   summary: Summary;

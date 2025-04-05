@@ -50,11 +50,11 @@ export class WeeklyComponent implements OnInit, OnDestroy {
     this.loading.set(true);
 
     this.radioChartService
-      .getLatestChartNumber()
+      .getLatestChart()
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (chartNumber) => {
-          this.loadChart(chartNumber);
+        next: (chart) => {
+          this.loadChart(+chart.no);
         },
       });
   }
