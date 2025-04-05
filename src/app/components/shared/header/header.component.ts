@@ -29,7 +29,25 @@ export class HeaderComponent implements OnInit, OnDestroy {
     this.checkAuthentication();
   }
 
-  checkAuthentication(): void {
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  /**
+   * Closes the menu by clicking on the toggler element if it is open.
+   * @param togglerElement The HTMLElement of the toggler element.
+   */
+  closeMenu(togglerElement: HTMLElement): void {
+    if (togglerElement.offsetParent !== null) {
+      togglerElement.click();
+    }
+  }
+
+  /**
+   * Checks if the user is authenticated and fetches their profile if necessary.
+   */
+  private checkAuthentication(): void {
     this.spotifyAuthService
       .isAuthenticated()
       .pipe(takeUntil(this.destroy$))
@@ -42,24 +60,36 @@ export class HeaderComponent implements OnInit, OnDestroy {
       });
   }
 
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
-  }
-
-  // Redirect the user to Spotify's authorization endpoint
-  login(): void {
+  /**
+   * Redirects the user to Spotify's authorization endpoint.
+   */
+  login(togglerElement?: HTMLElement): void {
     this.spotifyAuthService.login();
+
+    // Close menu if called from mobile view
+    if (togglerElement) {
+      this.closeMenu(togglerElement);
+    }
   }
 
-  // Log out the user
-  logout(): void {
+  /**
+   * Logs out the user and resets the user name and profile information.
+   */
+  logout(togglerElement?: HTMLElement): void {
     this.spotifyAuthService.logout();
 
     this.userName.set('');
     this.profile = undefined;
+
+    // Close menu if called from mobile view
+    if (togglerElement) {
+      this.closeMenu(togglerElement);
+    }
   }
 
+  /**
+   * Fetches the user's profile from Spotify and updates the component state accordingly.
+   */
   getProfile(): void {
     this.spotifyAuthService.getProfile().subscribe({
       next: (profile: UserProfile) => {
