@@ -1,6 +1,5 @@
 import { Routes } from '@angular/router';
 import { CallbackComponent } from './components/callback/callback.component';
-import { HelloComponent } from './components/hello/hello.component';
 import { NotFoundComponent } from './components/not-found/not-found.component';
 
 export const routes: Routes = [
@@ -8,17 +7,17 @@ export const routes: Routes = [
     path: '',
     title: 'Hello',
     pathMatch: 'full',
-    component: HelloComponent,
+    redirectTo: '/weekly',
   },
   { path: 'callback', component: CallbackComponent },
   {
     path: 'weekly',
-    title: 'Lista',
+    title: 'Lista Piosenek 357',
     loadComponent: () => import('./components/lists/weekly/weekly.component').then((c) => c.WeeklyComponent),
   },
   {
     path: 'top',
-    title: 'Top',
+    title: 'Top Wszechczasów',
     loadComponent: () => import('./components/lists/top/top.component').then((c) => c.TopComponent),
   },
   { path: '404', component: NotFoundComponent },
