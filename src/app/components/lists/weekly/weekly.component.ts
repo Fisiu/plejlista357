@@ -5,7 +5,6 @@ import { ButtonModule } from 'primeng/button';
 import { DialogService } from 'primeng/dynamicdialog';
 import { MessageModule } from 'primeng/message';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
-import { ToastModule } from 'primeng/toast';
 import { finalize, Subject, takeUntil } from 'rxjs';
 import { RadioChartService } from 'src/app/services/radio-chart.service';
 import { ChartSwitcherComponent } from '../partials/chart-switcher/chart-switcher.component';
@@ -17,11 +16,10 @@ import { NumberedTextAreaComponent } from '../partials/numbered-text-area/number
   imports: [
     CommonModule,
     MessageModule,
-    ToastModule,
-    NumberedTextAreaComponent,
     ProgressSpinnerModule,
-    ChartSwitcherComponent,
     ButtonModule,
+    NumberedTextAreaComponent,
+    ChartSwitcherComponent,
     CreateSpotifyPlaylistDialogComponent,
   ],
   templateUrl: './weekly.component.html',
@@ -29,11 +27,8 @@ import { NumberedTextAreaComponent } from '../partials/numbered-text-area/number
   providers: [MessageService, DialogService],
 })
 export class WeeklyComponent implements OnInit, OnDestroy {
-  private readonly messageService = inject(MessageService);
   private readonly radioChartService = inject(RadioChartService);
-
   private readonly destroy$ = new Subject<void>();
-  private error: string | null = null;
 
   latestChart = this.radioChartService.weeklyChart.asReadonly();
   latestChartText = this.radioChartService.latestWeeklyChartText.asReadonly();
@@ -76,21 +71,9 @@ export class WeeklyComponent implements OnInit, OnDestroy {
         finalize(() => this.loading.set(false)),
       )
       .subscribe({
-        next: () => {
-          this.messageService.add({
-            severity: 'success',
-            summary: 'Success',
-            detail: 'Chart fetched!',
-          });
-        },
         error: (err) => {
-          this.error = `Failed to load chart ${chartNumber}: ${err.message}`;
-
-          this.messageService.add({
-            severity: 'error',
-            summary: 'Error',
-            detail: this.error,
-          });
+          const error = `Failed to load chart ${chartNumber}: ${err.message}`;
+          console.error(error);
         },
       });
   }
