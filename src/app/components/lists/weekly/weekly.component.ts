@@ -1,8 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, OnDestroy, OnInit, signal } from '@angular/core';
-import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
-import { DialogService } from 'primeng/dynamicdialog';
 import { MessageModule } from 'primeng/message';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { finalize, Subject, takeUntil } from 'rxjs';
@@ -24,7 +22,6 @@ import { NumberedTextAreaComponent } from '../partials/numbered-text-area/number
   ],
   templateUrl: './weekly.component.html',
   styleUrl: './weekly.component.scss',
-  providers: [MessageService, DialogService],
 })
 export class WeeklyComponent implements OnInit, OnDestroy {
   private readonly radioChartService = inject(RadioChartService);

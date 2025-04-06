@@ -28,17 +28,6 @@ export class ChartSwitcherComponent implements OnDestroy {
   }
 
   onChartNumberChange(value: number): void {
-    this.radioChartService
-      .getChartByNumber(value)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: () => {
-          this.messageService.add({
-            severity: 'info',
-            summary: 'Info',
-            detail: `Chart ${value} fetched!`,
-          });
-        },
-      });
+    this.radioChartService.getChartByNumber(value).pipe(takeUntil(this.destroy$)).subscribe();
   }
 }

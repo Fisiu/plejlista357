@@ -101,6 +101,51 @@ export class SpotifyPlaylistService {
   }
 
   /**
+   * Check if a playlist with the given name already exists for the current user
+   * @param name Name of the playlist to check
+   * @returns Observable<boolean> - true if playlist exists, false otherwise
+   */
+  checkPlaylistExists(name: string): Observable<boolean> {
+    try {
+      this.checkSdkInitialized();
+
+      // Normalize the name for case-insensitive comparison
+      const normalizedName = name.toLowerCase().trim();
+
+      // Recursive function to check paginated playlists
+      const checkPlaylistPage = (offset: number, limit: MaxInt<50> = 50): Observable<boolean> => {
+        return from(this.sdk!.currentUser.playlists.playlists(limit, offset)).pipe(
+          switchMap((playlistPage) => {
+            // Check if playlist exists in current page
+            const exists = playlistPage.items.some((playlist) => playlist.name.toLowerCase().trim() === normalizedName);
+
+            if (exists) {
+              // Found it, return true
+              return of(true);
+            } else if (playlistPage.next && playlistPage.items.length === limit) {
+              // More pages exist, check the next page
+              return checkPlaylistPage(offset + limit, limit);
+            } else {
+              // No more pages and no match found
+              return of(false);
+            }
+          }),
+          catchError((error) => {
+            this.handleError('checkPlaylistExists', error);
+            return of(false); // If there's an error, assume it doesn't exist
+          }),
+        );
+      };
+
+      // Start checking from the first page
+      return checkPlaylistPage(0);
+    } catch (error) {
+      console.error('Error in checkPlaylistExists:', error);
+      return of(false);
+    }
+  }
+
+  /**
    * Add tracks to a playlist
    * @param playlistId Playlist ID
    * @param trackUris Array of track URIs

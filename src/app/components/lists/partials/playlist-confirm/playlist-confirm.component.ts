@@ -1,6 +1,7 @@
 import { Component, computed, inject, Signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Track } from '@spotify/web-api-ts-sdk';
+import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { SearchResultsService } from 'src/app/services/search-results.service';
@@ -13,6 +14,7 @@ import { SpotifyPlaylistService } from 'src/app/services/spotify-playlist.servic
   styleUrl: './playlist-confirm.component.scss',
 })
 export class PlaylistConfirmComponent {
+  private readonly messageService = inject(MessageService);
   private readonly ref = inject(DynamicDialogRef);
   private readonly spotifyPlaylistService = inject(SpotifyPlaylistService);
   private readonly searchResultsService = inject(SearchResultsService);
@@ -37,11 +39,30 @@ export class PlaylistConfirmComponent {
     const tracks: Track[] = this.tracks();
     const isPublic = true;
 
-    this.spotifyPlaylistService
-      .createPlaylistWithTracks(playlistName, playlistDescription, tracks, isPublic)
-      .subscribe((result) => {
-        console.log(JSON.stringify(result));
-      });
+    this.spotifyPlaylistService.checkPlaylistExists(playlistName).subscribe({
+      next: (exists: boolean) => {
+        if (exists) {
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Playlist not created!',
+            detail: `${playlistName} already exists.`,
+          });
+        } else {
+          this.spotifyPlaylistService
+            .createPlaylistWithTracks(playlistName, playlistDescription, tracks, isPublic)
+            .subscribe({
+              next: (createdPlaylist) => {
+                this.messageService.add({
+                  severity: 'success',
+                  summary: 'Playlist created!',
+                  detail: `${createdPlaylist.name} has been created.`,
+                });
+              },
+            });
+        }
+      },
+      error: (error) => console.error('Error checking if playlist exists:', error),
+    });
 
     this.ref.close(data);
   }

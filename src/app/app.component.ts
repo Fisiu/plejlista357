@@ -2,10 +2,12 @@ import { CommonModule } from '@angular/common';
 import { Component, computed, inject, OnDestroy, Renderer2, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
+import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { FluidModule } from 'primeng/fluid';
 import { InputTextModule } from 'primeng/inputtext';
 import { MessageModule } from 'primeng/message';
+import { ToastModule } from 'primeng/toast';
 import { ToggleButtonModule } from 'primeng/togglebutton';
 import { filter, Subject, takeUntil } from 'rxjs';
 import { FooterComponent } from './components/shared/footer/footer.component';
@@ -22,12 +24,14 @@ import { HeaderComponent } from './components/shared/header/header.component';
     FormsModule,
     ToggleButtonModule,
     FluidModule,
+    ToastModule,
     HeaderComponent,
     FooterComponent,
   ],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',
   standalone: true,
+  providers: [MessageService],
 })
 export class AppComponent implements OnDestroy {
   private renderer = inject(Renderer2);
