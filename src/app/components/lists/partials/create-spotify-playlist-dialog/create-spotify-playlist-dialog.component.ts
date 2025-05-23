@@ -4,6 +4,7 @@ import { DialogService, DynamicDialogConfig, DynamicDialogRef } from 'primeng/dy
 import { finalize } from 'rxjs';
 import { Chart } from 'src/app/services/radio-chart.model';
 import { SearchResultsService } from 'src/app/services/search-results.service';
+import { SpotifyAuthService } from 'src/app/services/spotify-auth.service';
 import { ArtistTitle, DialogData, MyTrack } from 'src/app/services/spotify-playlist.model';
 import { SpotifyPlaylistService } from 'src/app/services/spotify-playlist.service';
 import { PlaylistConfirmComponent } from '../playlist-confirm/playlist-confirm.component';
@@ -20,6 +21,7 @@ import { SearchResultsComponent } from '../search-results/search-results.compone
 export class CreateSpotifyPlaylistDialogComponent {
   private readonly dialogService = inject(DialogService);
   private readonly spotifyPlaylistService = inject(SpotifyPlaylistService);
+  private readonly spotifyAuthService = inject(SpotifyAuthService);
   private readonly searchResultsService = inject(SearchResultsService);
   private ref?: DynamicDialogRef;
 
@@ -30,7 +32,14 @@ export class CreateSpotifyPlaylistDialogComponent {
    * Handles the creation of a Spotify playlist by showing the dynamic dialog.
    */
   onSpotifyPlaylistCreate() {
-    this.showDynamicDialog();
+    this.spotifyPlaylistService.isAuthenticated().subscribe((authenticated) => {
+      if (authenticated) {
+        this.showDynamicDialog();
+      } else {
+        // Trigger the login flow
+        this.spotifyAuthService.login(); // To initiate login
+      }
+    });
   }
 
   /**

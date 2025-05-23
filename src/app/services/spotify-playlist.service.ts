@@ -22,6 +22,14 @@ export class SpotifyPlaylistService {
   }
 
   /**
+   * Checks if the user is currently authenticated with Spotify.
+   * @returns Observable<boolean> - true if authenticated, false otherwise.
+   */
+  isAuthenticated(): Observable<boolean> {
+    return this.spotifyAuthService.isAuthenticated();
+  }
+
+  /**
    * Get user's playlists
    * @param limit Number of playlists to retrieve
    * @param offset Offset for pagination

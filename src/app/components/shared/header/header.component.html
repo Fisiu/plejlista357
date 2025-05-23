@@ -71,11 +71,10 @@
       <div class="user-info">
         <p-chip [label]="userName()" [image]="avatar()" alt="Avatar image" />
       </div>
+      <button pButton pRipple [rounded]="true" (click)="logout(menuToggler)">Logout</button>
     </ng-container>
     <ng-template #loginButton>
       <button pButton pRipple [rounded]="true" (click)="login(menuToggler)" [text]="true">Login</button>
     </ng-template>
-
-    <button *ngIf="isAuthenticated" pButton pRipple [rounded]="true" (click)="logout(menuToggler)">Logout</button>
   </div>
 </div>

@@ -54,10 +54,16 @@ function handle401Error(
       }),
       switchMap(() => {
         const newToken = spotifyAuth.getAccessToken();
-        if (!newToken) throw new Error('No access token after refresh');
+        if (!newToken) {
+          // If no new token after refresh, logout and reject the request
+          spotifyAuth.logout();
+          refreshTokenSubject.next(undefined);
+          return throwError(() => new Error('No access token after refresh'));
+        }
         return next(addTokenHeader(request, newToken));
       }),
       catchError((err) => {
+        // If refresh fails, logout and reject the request
         isRefreshing.next(false);
         refreshTokenSubject.next(undefined);
         spotifyAuth.logout();
@@ -67,7 +73,7 @@ function handle401Error(
   }
 
   return refreshTokenSubject.pipe(
-    filter((token) => token !== null),
+    filter((token) => token !== undefined),
     take(1),
     switchMap((token) => next(addTokenHeader(request, token!))),
   );

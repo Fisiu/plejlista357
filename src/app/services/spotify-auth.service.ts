@@ -15,6 +15,8 @@ export class SpotifyAuthService {
   private readonly localStorageService = inject(LocalStorageService);
   private readonly accessTokenSubject = new BehaviorSubject<AccessToken | null>(null);
   readonly accessToken$ = this.accessTokenSubject.asObservable();
+  private readonly userProfileSubject = new BehaviorSubject<UserProfile | null>(null);
+  readonly userProfile$ = this.userProfileSubject.asObservable();
 
   constructor() {
     this.loadInitialToken();
@@ -70,6 +72,12 @@ export class SpotifyAuthService {
 
     return this.requestToken(payload).pipe(
       tap((token) => this.storeToken(token)),
+      tap(() => {
+        this.getProfile().subscribe({
+          next: (profile) => this.userProfileSubject.next(profile),
+          error: (err) => console.error(`Failed to load profile ${err}`),
+        });
+      }),
       catchError((error) => this.handleError('callback', error)),
     );
   }
@@ -114,7 +122,6 @@ export class SpotifyAuthService {
   refreshToken(): Observable<AccessToken> {
     const storedToken = this.getStoredToken();
     if (!storedToken?.refresh_token) {
-      this.logout();
       return throwError(() => new Error('No refresh token available'));
     }
 
@@ -124,7 +131,7 @@ export class SpotifyAuthService {
     });
 
     return this.requestToken(payload).pipe(
-      tap((token) => this.updateRefreshToken(token, storedToken)),
+      tap((token) => this.storeToken(token)),
       catchError((error) => this.handleError('refreshToken', error)),
     );
   }
@@ -193,19 +200,6 @@ export class SpotifyAuthService {
   private storeToken(token: AccessToken): void {
     localStorage.setItem(SPOTIFY_CONSTANTS.STORAGE.KEY_TOKEN, JSON.stringify(token));
     this.accessTokenSubject.next(token);
-  }
-
-  /**
-   * Updates the stored token with a new refresh token if provided.
-   * @param newToken The new token response.
-   * @param storedToken The existing stored token.
-   * @private
-   */
-  private updateRefreshToken(newToken: AccessToken, storedToken: AccessToken): void {
-    if (newToken.refresh_token) {
-      storedToken.refresh_token = newToken.refresh_token;
-      this.storeToken(storedToken);
-    }
   }
 
   /**
