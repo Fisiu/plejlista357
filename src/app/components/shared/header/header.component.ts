@@ -8,6 +8,7 @@ import { ChipModule } from 'primeng/chip';
 import { RippleModule } from 'primeng/ripple';
 import { StyleClassModule } from 'primeng/styleclass';
 import { Subject, takeUntil } from 'rxjs';
+import { ChartType } from 'src/app/services/chart-type.type';
 import { SpotifyAuthService } from 'src/app/services/spotify-auth.service';
 
 @Component({
@@ -19,6 +20,12 @@ import { SpotifyAuthService } from 'src/app/services/spotify-auth.service';
 export class HeaderComponent implements OnInit, OnDestroy {
   private readonly spotifyAuthService = inject(SpotifyAuthService);
   private readonly destroy$ = new Subject<void>();
+
+  chartLinks: { type: ChartType; label: string; path: string }[] = [
+    { type: 'weekly', label: 'Lista 357', path: '/weekly' },
+    { type: 'top', label: 'Top', path: '/top' },
+    { type: 'top-pl', label: 'Polski Top', path: '/top-pl' },
+  ];
 
   isAuthenticated = false;
   profile?: UserProfile;

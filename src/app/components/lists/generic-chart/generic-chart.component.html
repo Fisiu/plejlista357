@@ -9,7 +9,7 @@
         </div>
         <span class="text-muted-color text-2xl">{{ latestChart()?.title }}</span>
         <div class="py-1">
-          <app-chart-switcher></app-chart-switcher>
+          <app-chart-switcher [chartType]="chartType"></app-chart-switcher>
         </div>
         <app-numbered-text-area [lines]="latestChartText()"></app-numbered-text-area>
       </div>

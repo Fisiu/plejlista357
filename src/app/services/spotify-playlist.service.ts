@@ -1,8 +1,9 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { AccessToken, MaxInt, Page, SimplifiedPlaylist, SpotifyApi, Track } from '@spotify/web-api-ts-sdk';
-import { catchError, forkJoin, from, map, Observable, of, switchMap, throwError } from 'rxjs';
+import { catchError, concatMap, from, last, map, mergeMap, Observable, of, switchMap, throwError, toArray } from 'rxjs';
 import { SPOTIFY_CONSTANTS } from '../constants/spotify.constants';
+import { chunkArray } from '../utils/array-utils';
 import { LocalStorageService } from './local-storage.service';
 import { SpotifyAuthService } from './spotify-auth.service';
 import { ArtistTitle, MyTrack } from './spotify-playlist.model';
@@ -78,9 +79,12 @@ export class SpotifyPlaylistService {
             const track = results.tracks.items[0];
             return { ...track, srcPosition: position, srcArtist: artist, srcTitle: trackName };
           }
+          // Log when track is not found
+          console.error(`Track not found on Spotify: "${query}" (position: ${position})`);
           return null;
         }),
         catchError((error) => {
+          console.error(`Error searching for track "${query}":`, error);
           this.handleError('searchTrack', error);
           return of(null);
         }),
@@ -101,11 +105,15 @@ export class SpotifyPlaylistService {
       return of([]);
     }
 
-    const searches = trackStrings.map((trackString) =>
-      this.searchTrack(trackString.artist, trackString.title, trackString.position),
-    );
+    const CONCURRENCY = 2; // 2 seems to be max to avoid rate limits
 
-    return forkJoin(searches);
+    return from(trackStrings).pipe(
+      mergeMap(
+        (trackString) => this.searchTrack(trackString.artist, trackString.title, trackString.position),
+        CONCURRENCY,
+      ),
+      toArray(),
+    );
   }
 
   /**
@@ -186,8 +194,14 @@ export class SpotifyPlaylistService {
     try {
       this.checkSdkInitialized();
 
-      // Get track URIs
-      const trackUris = tracks.map((track) => track.uri);
+      // // Get track URIs
+      // const trackUris = tracks.map((track) => track.uri);
+      // Filter out null/undefined tracks before mapping
+
+      console.log(tracks);
+
+      const validTracks = tracks.filter((track): track is Track => !!track);
+      const trackUris = validTracks.map((track) => track.uri);
 
       return this.spotifyAuthService.getProfile().pipe(
         switchMap((user) =>
@@ -201,7 +215,14 @@ export class SpotifyPlaylistService {
         ),
         switchMap((playlist) => {
           if (trackUris.length > 0) {
-            return from(this.sdk!.playlists.addItemsToPlaylist(playlist.id, trackUris)).pipe(map(() => playlist));
+            // Chunk trackUris into batches of 100
+            const chunks = chunkArray(trackUris, 100);
+            return from(chunks).pipe(
+              concatMap((uris) => from(this.sdk!.playlists.addItemsToPlaylist(playlist.id, uris))),
+              last(), // Wait for all chunks to complete
+              // After all chunks, emit the playlist
+              map(() => playlist),
+            );
           }
           return of(playlist);
         }),
