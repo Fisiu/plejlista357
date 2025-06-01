@@ -114,7 +114,7 @@ export class CreateSpotifyPlaylistDialogComponent {
   private mapSourcePlaylist(items: string): ArtistTitle[] {
     return items
       .split('\n')
-      .map((item) => item.split('-'))
+      .map((item) => item.split(' - ').map((part) => part.trim()))
       .filter((parts) => parts.length === 2)
       .map(([artist, title], index, array) => ({ artist, title, position: array.length - index }));
   }

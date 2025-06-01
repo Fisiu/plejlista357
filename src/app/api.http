@@ -1,0 +1,8 @@
+### weekly chart
+GET https://wyniki.radio357.pl/api/charts/lista/latest
+
+### top (yearly) chart
+GET https://wyniki.radio357.pl/api/charts/top/latest
+
+### polski top (yearly) chart
+GET https://wyniki.radio357.pl/api/charts/polski-top/latest

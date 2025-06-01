@@ -1,6 +1,7 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { inject, Injectable, signal } from '@angular/core';
 import { catchError, Observable, tap, throwError } from 'rxjs';
+import { ChartType } from './chart-type.type';
 import { Chart } from './radio-chart.model';
 
 @Injectable({
@@ -9,28 +10,33 @@ import { Chart } from './radio-chart.model';
 export class RadioChartService {
   private http = inject(HttpClient);
 
-  baseUrl = 'https://wyniki.radio357.pl/api/charts';
+  private readonly endpoints: Record<ChartType, string> = {
+    weekly: 'https://wyniki.radio357.pl/api/charts/lista',
+    top: 'https://wyniki.radio357.pl/api/charts/top',
+    'top-pl': 'https://wyniki.radio357.pl/api/charts/polski-top',
+  };
 
-  latestWeeklyChartNumber = signal<number>(0);
-  weeklyChart = signal<Chart | undefined>(undefined);
-  latestWeeklyChartText = signal<string[]>([]);
+  latestChartNumber = signal<number>(0);
+  chart = signal<Chart | undefined>(undefined);
+  latestChartText = signal<string[]>([]);
 
   // Persistent chart cache - charts never change once published
-  private chartCache = new Map<number, Chart>();
+  private chartCache = new Map<string, Chart>();
 
   /**
    * Retrieves the latest chart directly from the new endpoint
    * @returns {Observable<Chart>} - An Observable of the latest chart
    */
-  getLatestChart(): Observable<Chart> {
-    const url = `${this.baseUrl}/lista/latest`;
+  getLatestChart(chartType: ChartType): Observable<Chart> {
+    const url = `${this.endpoints[chartType]}/latest`;
     return this.http.get<Chart>(url).pipe(
       catchError(this.handleError),
       tap((chart) => {
         // Extract the chart number and cache the result
         const chartNumber = +chart.no;
-        this.latestWeeklyChartNumber.set(chartNumber);
-        this.chartCache.set(chartNumber, chart);
+        const cacheKey = `${chartType}-${chartNumber}`;
+        this.latestChartNumber.set(chartNumber);
+        this.chartCache.set(cacheKey, chart);
         this.updateChartSignals(chart);
       }),
     );
@@ -41,11 +47,12 @@ export class RadioChartService {
    * @param {number} chartNumber - A number representing the weekly chart to retrieve.
    * @returns {Observable<Chart>} - An Observable of type Chart that contains information about the requested chart.
    */
-  getChartByNumber(chartNumber: number): Observable<Chart> {
+  getChartByNumber(chartType: ChartType, chartNumber: number): Observable<Chart> {
+    const cacheKey = `${chartType}-${chartNumber}`;
     // Check if we have this chart in cache - it never expires!
-    if (this.chartCache.has(chartNumber)) {
+    if (this.chartCache.has(cacheKey)) {
       return new Observable<Chart>((observer) => {
-        const cachedChart = this.chartCache.get(chartNumber)!;
+        const cachedChart = this.chartCache.get(cacheKey)!;
         this.updateChartSignals(cachedChart);
         observer.next(cachedChart);
         observer.complete();
@@ -53,12 +60,12 @@ export class RadioChartService {
     }
 
     // No cache hit, fetch from API
-    const url = `${this.baseUrl}/lista/${chartNumber}`;
+    const url = `${this.endpoints[chartType]}/${chartNumber}`;
     return this.http.get<Chart>(url).pipe(
       catchError(this.handleError),
       tap((response) => {
         // Cache the result permanently
-        this.chartCache.set(chartNumber, response);
+        this.chartCache.set(cacheKey, response);
         this.updateChartSignals(response);
       }),
     );
@@ -68,9 +75,10 @@ export class RadioChartService {
    * Update signals from chart data
    */
   private updateChartSignals(chart: Chart): void {
+    // TODO: change from string (artist - title) to objects
     const chartItems = chart.results.mainChart.items.map((item) => `${item.artist} - ${item.name}`).reverse();
-    this.latestWeeklyChartText.set(chartItems);
-    this.weeklyChart.set(chart);
+    this.latestChartText.set(chartItems);
+    this.chart.set(chart);
   }
 
   /**

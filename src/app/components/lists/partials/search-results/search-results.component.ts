@@ -39,7 +39,11 @@ export class SearchResultsComponent {
    * @returns An array of DisplayTrack objects.
    */
   private convertToDisplayTrack(tracks: (MyTrack | null)[]): DisplayTrack[] {
-    return tracks.map((track) => ({
+    const validTracks = tracks
+      .filter((track): track is MyTrack => !!track)
+      .sort((a, b) => (b.srcPosition ?? 0) - (a.srcPosition ?? 0));
+
+    return validTracks.map((track) => ({
       id: track?.id || '',
       spotifyId: track?.id || '',
       position: track?.srcPosition.toString() || '',

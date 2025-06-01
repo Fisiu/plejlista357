@@ -13,12 +13,23 @@ export const routes: Routes = [
   {
     path: 'weekly',
     title: 'Lista Piosenek 357',
-    loadComponent: () => import('./components/lists/weekly/weekly.component').then((c) => c.WeeklyComponent),
+    loadComponent: () =>
+      import('./components/lists/generic-chart/generic-chart.component').then((c) => c.GenericChartComponent),
+    data: { chartType: 'weekly' },
   },
   {
     path: 'top',
-    title: 'Top Wszechczasów',
-    loadComponent: () => import('./components/lists/top/top.component').then((c) => c.TopComponent),
+    title: 'Top Radia 357',
+    loadComponent: () =>
+      import('./components/lists/generic-chart/generic-chart.component').then((c) => c.GenericChartComponent),
+    data: { chartType: 'top' },
+  },
+  {
+    path: 'top-pl',
+    title: 'Polski Top Radia 357',
+    loadComponent: () =>
+      import('./components/lists/generic-chart/generic-chart.component').then((c) => c.GenericChartComponent),
+    data: { chartType: 'top-pl' },
   },
   { path: '404', component: NotFoundComponent },
   { path: '**', redirectTo: '/404' },

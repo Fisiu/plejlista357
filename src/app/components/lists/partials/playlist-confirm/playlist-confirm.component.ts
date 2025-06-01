@@ -47,6 +47,7 @@ export class PlaylistConfirmComponent {
             summary: 'Playlist not created!',
             detail: `${playlistName} already exists.`,
           });
+          this.ref.close(data);
         } else {
           this.spotifyPlaylistService
             .createPlaylistWithTracks(playlistName, playlistDescription, tracks, isPublic)
@@ -57,14 +58,25 @@ export class PlaylistConfirmComponent {
                   summary: 'Playlist created!',
                   detail: `${createdPlaylist.name} has been created.`,
                 });
+                this.ref.close(data);
+              },
+              error: (err) => {
+                this.messageService.add({
+                  severity: 'error',
+                  summary: 'Error',
+                  detail: 'Failed to create playlist.',
+                });
+                console.error(`Failed to create playlist:`, err);
+                this.ref.close(data);
               },
             });
         }
       },
-      error: (error) => console.error('Error checking if playlist exists:', error),
+      error: (error) => {
+        console.error('Error checking if playlist exists:', error);
+        this.ref.close(data);
+      },
     });
-
-    this.ref.close(data);
   }
 
   /**
