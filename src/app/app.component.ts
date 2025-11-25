@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import { Component, computed, inject, OnDestroy, Renderer2, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
@@ -16,7 +16,6 @@ import { HeaderComponent } from './components/shared/header/header.component';
 @Component({
   selector: 'app-root',
   imports: [
-    CommonModule,
     RouterOutlet,
     InputTextModule,
     ButtonModule,
@@ -26,8 +25,8 @@ import { HeaderComponent } from './components/shared/header/header.component';
     FluidModule,
     ToastModule,
     HeaderComponent,
-    FooterComponent,
-  ],
+    FooterComponent
+],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',
   standalone: true,

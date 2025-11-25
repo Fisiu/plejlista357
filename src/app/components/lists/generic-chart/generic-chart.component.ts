@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import { Component, inject, Input, OnDestroy, OnInit, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
@@ -14,14 +14,13 @@ import { NumberedTextAreaComponent } from '../partials/numbered-text-area/number
 @Component({
   selector: 'app-generic-chart',
   imports: [
-    CommonModule,
     MessageModule,
     ProgressSpinnerModule,
     ButtonModule,
     ChartSwitcherComponent,
     NumberedTextAreaComponent,
-    CreateSpotifyPlaylistDialogComponent,
-  ],
+    CreateSpotifyPlaylistDialogComponent
+],
   templateUrl: './generic-chart.component.html',
   styleUrl: './generic-chart.component.scss',
 })

@@ -2,10 +2,14 @@
   <div class="grid grid-cols-12 gap-4 justify-center">
     <div class="col-span-12 text-center mt-20 mb-6">
       <h3>Authenticating with Spotify...</h3>
-      <div *ngIf="error" class="error">{{ error }}</div>
-      <div *ngIf="loading" class="loading">
-        <div class="spinner"></div>
-      </div>
+      @if (error) {
+        <div class="error">{{ error }}</div>
+      }
+      @if (loading) {
+        <div class="loading">
+          <div class="spinner"></div>
+        </div>
+      }
     </div>
   </div>
 </div>

@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import { Component, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { UserProfile } from '@spotify/web-api-ts-sdk';
@@ -13,7 +13,7 @@ import { SpotifyAuthService } from 'src/app/services/spotify-auth.service';
 
 @Component({
   selector: 'app-header',
-  imports: [ButtonModule, CommonModule, RouterModule, AvatarModule, ChipModule, StyleClassModule, RippleModule],
+  imports: [ButtonModule, RouterModule, AvatarModule, ChipModule, StyleClassModule, RippleModule],
   templateUrl: './header.component.html',
   styleUrl: './header.component.scss',
 })

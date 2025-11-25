@@ -1,11 +1,11 @@
-import { CommonModule } from '@angular/common';
+
 import { Component, inject, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { SpotifyAuthService } from 'src/app/services/spotify-auth.service';
 
 @Component({
   selector: 'app-callback',
-  imports: [CommonModule],
+  imports: [],
   templateUrl: './callback.component.html',
   styleUrl: './callback.component.scss',
 })

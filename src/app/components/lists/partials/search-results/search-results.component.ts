@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import { Component, computed, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ButtonModule } from 'primeng/button';
@@ -11,7 +11,7 @@ import { DisplayTrack, MyTrack } from 'src/app/services/spotify-playlist.model';
 
 @Component({
   selector: 'app-search-results',
-  imports: [CommonModule, ButtonModule, ProgressSpinnerModule, TableModule, TooltipModule],
+  imports: [ButtonModule, ProgressSpinnerModule, TableModule, TooltipModule],
   providers: [DialogService],
   templateUrl: './search-results.component.html',
   styleUrl: './search-results.component.scss',
