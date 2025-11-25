@@ -10,3 +10,6 @@ updates:
     target-branch: "master"
     schedule:
       interval: "weekly"
+    ignore:
+      - dependency-name: tailwindcss
+        versions: [">=4.0.0"]
