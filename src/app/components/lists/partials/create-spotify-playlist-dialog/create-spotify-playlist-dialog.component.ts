@@ -23,7 +23,7 @@ export class CreateSpotifyPlaylistDialogComponent {
   private readonly spotifyPlaylistService = inject(SpotifyPlaylistService);
   private readonly spotifyAuthService = inject(SpotifyAuthService);
   private readonly searchResultsService = inject(SearchResultsService);
-  private ref?: DynamicDialogRef;
+  private ref?: DynamicDialogRef | null;
 
   latestChart = input.required<Chart | undefined>();
   latestChartText = input.required<string[]>();
