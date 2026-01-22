@@ -8,6 +8,7 @@
           {{ latestChart()?.name }}
         </div>
         <span class="text-muted-color text-2xl">{{ latestChart()?.title }}</span>
+        <span class="text-muted-color text-2xl">{{ " - " + latestChart()?.published_at_date }}</span>
         <div class="py-1">
           <app-chart-switcher [chartType]="chartType"></app-chart-switcher>
         </div>
