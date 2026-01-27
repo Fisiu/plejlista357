@@ -36,7 +36,7 @@
     "@angular/cli": "^21.1.1",
     "@angular/compiler-cli": "^21.1.1",
     "@eslint/js": "^9.39.2",
-    "@types/jasmine": "~5.1.15",
+    "@types/jasmine": "~6.0.0",
     "angular-eslint": "21.1.0",
     "autoprefixer": "^10.4.23",
     "eslint": "^9.39.2",
