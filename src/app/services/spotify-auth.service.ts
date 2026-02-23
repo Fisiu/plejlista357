@@ -1,11 +1,24 @@
 import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { AccessToken, UserProfile } from '@spotify/web-api-ts-sdk';
-import { BehaviorSubject, catchError, map, Observable, switchMap, take, tap, throwError } from 'rxjs';
+import {
+  BehaviorSubject,
+  catchError,
+  map,
+  Observable,
+  of,
+  switchMap,
+  take,
+  tap,
+  throwError,
+} from 'rxjs';
 import { environment } from 'src/environments/environment';
 import { SPOTIFY_CONSTANTS } from './../constants/spotify.constants';
 import { generateCodeChallenge, generateCodeVerifier } from './auth.utils';
 import { LocalStorageService } from './local-storage.service';
+
+/** Extends AccessToken with an absolute expiry timestamp (ms since epoch). */
+type StoredAccessToken = AccessToken & { expires_at?: number };
 
 @Injectable({
   providedIn: 'root',
@@ -36,7 +49,7 @@ export class SpotifyAuthService {
    */
   async login(): Promise<void> {
     const codeVerifier = generateCodeVerifier();
-    localStorage.setItem(SPOTIFY_CONSTANTS.STORAGE.KEY_VERIFIER, codeVerifier);
+    this.localStorageService.setItem(SPOTIFY_CONSTANTS.STORAGE.KEY_VERIFIER, codeVerifier);
     const codeChallenge = await generateCodeChallenge(codeVerifier);
     window.location.href = this.buildAuthUrl(codeChallenge);
   }
@@ -45,9 +58,10 @@ export class SpotifyAuthService {
    * Logs out the current user by clearing stored tokens and resetting authentication state.
    */
   logout() {
-    localStorage.removeItem(SPOTIFY_CONSTANTS.STORAGE.KEY_TOKEN);
-    localStorage.removeItem(SPOTIFY_CONSTANTS.STORAGE.KEY_VERIFIER);
+    this.localStorageService.removeItem(SPOTIFY_CONSTANTS.STORAGE.KEY_TOKEN);
+    this.localStorageService.removeItem(SPOTIFY_CONSTANTS.STORAGE.KEY_VERIFIER);
     this.accessTokenSubject.next(null);
+    this.userProfileSubject.next(null);
   }
 
   /**
@@ -57,7 +71,7 @@ export class SpotifyAuthService {
    * @throws Error if the code verifier is missing or the token request fails.
    */
   handleCallback(code: string): Observable<AccessToken> {
-    const codeVerifier = localStorage.getItem(SPOTIFY_CONSTANTS.STORAGE.KEY_VERIFIER);
+    const codeVerifier = this.localStorageService.getItem(SPOTIFY_CONSTANTS.STORAGE.KEY_VERIFIER);
     if (!codeVerifier) {
       return throwError(() => new Error('Code verifier not found'));
     }
@@ -72,12 +86,16 @@ export class SpotifyAuthService {
 
     return this.requestToken(payload).pipe(
       tap((token) => this.storeToken(token)),
-      tap(() => {
-        this.getProfile().subscribe({
-          next: (profile) => this.userProfileSubject.next(profile),
-          error: (err) => console.error(`Failed to load profile ${err}`),
-        });
-      }),
+      switchMap((token) =>
+        this.getProfile().pipe(
+          tap((profile) => this.userProfileSubject.next(profile)),
+          catchError((err) => {
+            console.error('Failed to load profile after callback:', err);
+            return of(null);
+          }),
+          map(() => token),
+        ),
+      ),
       catchError((error) => this.handleError('callback', error)),
     );
   }
@@ -107,11 +125,11 @@ export class SpotifyAuthService {
   }
 
   /**
-   * Checks if the user is currently authenticated.
-   * @returns An Observable emitting true if an access token exists, false otherwise.
+   * Checks if the user is currently authenticated with a non-expired token.
+   * @returns An Observable emitting true if a valid access token exists, false otherwise.
    */
   isAuthenticated(): Observable<boolean> {
-    return this.accessToken$.pipe(map((token) => !!token));
+    return this.accessToken$.pipe(map((token) => !!token && !this.isTokenExpired(token as StoredAccessToken)));
   }
 
   /**
@@ -186,7 +204,7 @@ export class SpotifyAuthService {
    * @returns HttpHeaders with Authorization set.
    * @private
    */
-  getAuthHeaders(token: string): HttpHeaders {
+  private getAuthHeaders(token: string): HttpHeaders {
     return new HttpHeaders({
       Authorization: `Bearer ${token}`,
     });
@@ -198,8 +216,12 @@ export class SpotifyAuthService {
    * @private
    */
   private storeToken(token: AccessToken): void {
-    localStorage.setItem(SPOTIFY_CONSTANTS.STORAGE.KEY_TOKEN, JSON.stringify(token));
-    this.accessTokenSubject.next(token);
+    const tokenWithExpiry: StoredAccessToken = {
+      ...token,
+      expires_at: Date.now() + (token.expires_in ?? SPOTIFY_CONSTANTS.DEFAULT_TOKEN_EXPIRY_SECONDS) * 1000,
+    };
+    this.localStorageService.setItemAsObject(SPOTIFY_CONSTANTS.STORAGE.KEY_TOKEN, tokenWithExpiry);
+    this.accessTokenSubject.next(tokenWithExpiry as AccessToken);
   }
 
   /**
@@ -212,14 +234,49 @@ export class SpotifyAuthService {
   }
 
   /**
+   * Checks whether a stored token is expired based on the `expires_at` timestamp.
+   * @param token The access token to check.
+   * @returns true if the token is expired, false otherwise.
+   * @private
+   */
+  private isTokenExpired(token: StoredAccessToken): boolean {
+    if (!token.expires_at) {
+      return false;
+    }
+    return Date.now() >= token.expires_at;
+  }
+
+  /**
    * Loads the initial token from local storage on service initialization.
+   * If the stored token is expired, attempts a refresh; otherwise restores user profile.
    * @private
    */
   private loadInitialToken(): void {
-    const storedToken = this.getStoredToken();
-    if (storedToken) {
-      this.accessTokenSubject.next(storedToken);
+    const storedToken = this.getStoredToken() as StoredAccessToken | null;
+    if (!storedToken) {
+      return;
     }
+
+    if (this.isTokenExpired(storedToken)) {
+      this.refreshToken().subscribe({
+        next: () => this.fetchAndStoreProfile(),
+        error: () => this.logout(),
+      });
+    } else {
+      this.accessTokenSubject.next(storedToken);
+      this.fetchAndStoreProfile();
+    }
+  }
+
+  /**
+   * Fetches the user profile and stores it in the userProfileSubject.
+   * @private
+   */
+  private fetchAndStoreProfile(): void {
+    this.getProfile().subscribe({
+      next: (profile) => this.userProfileSubject.next(profile),
+      error: (err) => console.error('Failed to restore user profile:', err),
+    });
   }
 
   /**
@@ -230,7 +287,6 @@ export class SpotifyAuthService {
    * @private
    */
   private handleError(operation: string, error: HttpErrorResponse): Observable<never> {
-    // If token expired, we could handle token refresh here
     if (error.status === 400) {
       this.logout();
     }
