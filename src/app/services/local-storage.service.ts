@@ -23,4 +23,43 @@ export class LocalStorageService {
     }
     return null;
   }
+
+  /**
+   * Retrieves a raw string item from `localStorage`.
+   *
+   * @param key - The key under which the item is stored in localStorage.
+   * @returns The stored string, or null if not found.
+   */
+  getItem(key: string): string | null {
+    return localStorage.getItem(key);
+  }
+
+  /**
+   * Stores a serializable object in `localStorage` as a JSON string.
+   *
+   * @param key - The key to store the item under.
+   * @param value - The object to serialize and store.
+   */
+  setItemAsObject(key: string, value: unknown): void {
+    localStorage.setItem(key, JSON.stringify(value));
+  }
+
+  /**
+   * Stores a raw string value in `localStorage`.
+   *
+   * @param key - The key to store the item under.
+   * @param value - The string value to store.
+   */
+  setItem(key: string, value: string): void {
+    localStorage.setItem(key, value);
+  }
+
+  /**
+   * Removes an item from `localStorage`.
+   *
+   * @param key - The key of the item to remove.
+   */
+  removeItem(key: string): void {
+    localStorage.removeItem(key);
+  }
 }

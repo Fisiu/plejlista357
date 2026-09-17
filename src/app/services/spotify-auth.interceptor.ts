@@ -1,11 +1,11 @@
 import { HttpErrorResponse, HttpEvent, HttpHandlerFn, HttpInterceptorFn, HttpRequest } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { BehaviorSubject, catchError, filter, Observable, switchMap, take, tap, throwError } from 'rxjs';
+import { catchError, Observable, Subject, switchMap, take, throwError } from 'rxjs';
 import { SpotifyAuthService } from './spotify-auth.service';
 
 // Shared state for token refresh coordination
-const isRefreshing = new BehaviorSubject<boolean>(false);
-const refreshTokenSubject = new BehaviorSubject<string | undefined>(undefined);
+let isRefreshing = false;
+let refreshTokenSubject = new Subject<string>();
 
 /**
  * Intercepts HTTP requests to add Spotify authentication headers and handle token refresh.
@@ -45,27 +45,27 @@ function handle401Error(
   next: HttpHandlerFn,
   spotifyAuth: SpotifyAuthService,
 ): Observable<HttpEvent<unknown>> {
-  if (!isRefreshing.value) {
-    isRefreshing.next(true);
+  if (!isRefreshing) {
+    isRefreshing = true;
+    refreshTokenSubject = new Subject<string>();
     return spotifyAuth.refreshToken().pipe(
-      tap(() => {
-        isRefreshing.next(false);
-        refreshTokenSubject.next(spotifyAuth.getAccessToken());
-      }),
       switchMap(() => {
         const newToken = spotifyAuth.getAccessToken();
         if (!newToken) {
           // If no new token after refresh, logout and reject the request
           spotifyAuth.logout();
-          refreshTokenSubject.next(undefined);
           return throwError(() => new Error('No access token after refresh'));
         }
+        refreshTokenSubject.next(newToken);
+        refreshTokenSubject.complete();
+        isRefreshing = false;
         return next(addTokenHeader(request, newToken));
       }),
       catchError((err) => {
         // If refresh fails, logout and reject the request
-        isRefreshing.next(false);
-        refreshTokenSubject.next(undefined);
+        isRefreshing = false;
+        refreshTokenSubject.error(err);
+        refreshTokenSubject = new Subject<string>();
         spotifyAuth.logout();
         return throwError(() => err);
       }),
@@ -73,8 +73,7 @@ function handle401Error(
   }
 
   return refreshTokenSubject.pipe(
-    filter((token) => token !== undefined),
     take(1),
-    switchMap((token) => next(addTokenHeader(request, token!))),
+    switchMap((token) => next(addTokenHeader(request, token))),
   );
 }

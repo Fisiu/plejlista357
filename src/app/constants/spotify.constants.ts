@@ -9,4 +9,5 @@ export const SPOTIFY_CONSTANTS = {
     PROFILE: 'https://api.spotify.com/v1/me',
   },
   SCOPES: ['user-read-private', 'user-read-email', 'playlist-modify-public', 'playlist-modify-private'],
+  DEFAULT_TOKEN_EXPIRY_SECONDS: 3600,
 };

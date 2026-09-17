@@ -1,10 +1,8 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { AccessToken, MaxInt, Page, SimplifiedPlaylist, SpotifyApi, Track } from '@spotify/web-api-ts-sdk';
+import { MaxInt, Page, SimplifiedPlaylist, SpotifyApi, Track } from '@spotify/web-api-ts-sdk';
 import { catchError, concatMap, from, last, map, mergeMap, Observable, of, switchMap, throwError, toArray } from 'rxjs';
-import { SPOTIFY_CONSTANTS } from '../constants/spotify.constants';
 import { chunkArray } from '../utils/array-utils';
-import { LocalStorageService } from './local-storage.service';
 import { SpotifyAuthService } from './spotify-auth.service';
 import { ArtistTitle, MyTrack } from './spotify-playlist.model';
 
@@ -14,12 +12,13 @@ import { ArtistTitle, MyTrack } from './spotify-playlist.model';
 export class SpotifyPlaylistService {
   private readonly http = inject(HttpClient);
   private readonly spotifyAuthService = inject(SpotifyAuthService);
-  private readonly localStorageService = inject(LocalStorageService);
 
   private sdk: SpotifyApi | null = null;
 
   constructor() {
-    this.initializeSpotifySDK();
+    this.spotifyAuthService.accessToken$.subscribe((token) => {
+      this.sdk = token ? SpotifyApi.withAccessToken('', token) : null;
+    });
   }
 
   /**
@@ -43,23 +42,16 @@ export class SpotifyPlaylistService {
   }
 
   /**
-   * Get user's playlists
+   * Get user's playlists via the HTTP client (uses the auth interceptor for token injection)
    * @param limit Number of playlists to retrieve
    * @param offset Offset for pagination
    */
   getUserPlaylistsRaw(limit: MaxInt<20> = 20, offset = 0): Observable<Page<SimplifiedPlaylist>> {
-    const accessToken = this.localStorageService.getItemAsObject<AccessToken>(
-      SPOTIFY_CONSTANTS.STORAGE.KEY_TOKEN,
-    )?.access_token;
-
     return this.http
       .get<Page<SimplifiedPlaylist>>('https://api.spotify.com/v1/me/playlists', {
-        headers: this.spotifyAuthService.getAuthHeaders(accessToken!),
         params: new HttpParams().set('limit', limit).set('offset', offset),
       })
       .pipe(catchError((error) => this.handleError('getUserPlaylists', error)));
-    // this.sdk!.currentUser.playlists.playlists(limit, offset),
-    // .pipe(catchError((error) => this.handleError('getUserPlaylists', error)));
   }
 
   /**
@@ -194,12 +186,6 @@ export class SpotifyPlaylistService {
     try {
       this.checkSdkInitialized();
 
-      // // Get track URIs
-      // const trackUris = tracks.map((track) => track.uri);
-      // Filter out null/undefined tracks before mapping
-
-      console.log(tracks);
-
       const validTracks = tracks.filter((track): track is Track => !!track);
       const trackUris = validTracks.map((track) => track.uri);
 
@@ -254,22 +240,6 @@ export class SpotifyPlaylistService {
   }
 
   /**
-   * Initialize the Spotify SDK with tokens from localStorage
-   */
-  private initializeSpotifySDK(): void {
-    const token = this.localStorageService.getItemAsObject<AccessToken>(SPOTIFY_CONSTANTS.STORAGE.KEY_TOKEN);
-
-    if (token) {
-      try {
-        this.sdk = SpotifyApi.withAccessToken('', token);
-      } catch (error) {
-        console.error('Failed to parse Spotify token from localStorage:', error);
-        this.sdk = null;
-      }
-    }
-  }
-
-  /**
    * Check if SDK is initialized, otherwise throw error
    */
   private checkSdkInitialized(): void {
@@ -279,45 +249,12 @@ export class SpotifyPlaylistService {
   }
 
   /**
-   * Refreshes the Spotify access token.
-   */
-  private refreshToken(): void {
-    console.log('Attempting to refresh token...');
-    this.spotifyAuthService.refreshToken().subscribe({
-      next: (newToken: AccessToken) => {
-        console.log('Token refreshed successfully:', newToken);
-        localStorage.setItem(SPOTIFY_CONSTANTS.STORAGE.KEY_TOKEN, JSON.stringify(newToken));
-        this.sdk = SpotifyApi.withAccessToken('', newToken); // Re-initialize SDK with new token
-      },
-      error: (error) => {
-        console.error('Failed to refresh token:', error);
-        // Handle token refresh failure.  Likely need to re-authenticate.
-        // This could involve redirecting the user to the authentication flow again.
-        console.log('Token refresh failed.  Redirecting to authentication flow.');
-        // Example:  this.router.navigate(['/login']);  (assuming you have a router)
-      },
-    });
-  }
-
-  /**
    * Error handler for API calls
    * @param operation Name of the operation that failed
    * @param error Error object
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private handleError(operation: string, error: any): Observable<never> {
-    // If token expired, we could handle token refresh here
-    // if (error.status === 401) {
-    console.log('Authentication error. Token may have expired.');
-    // You could implement token refresh logic here or call your auth service
-    const token = this.localStorageService.getItemAsObject<AccessToken>(SPOTIFY_CONSTANTS.STORAGE.KEY_TOKEN);
-    if (token) {
-      this.refreshToken();
-    } else {
-      this.spotifyAuthService.login();
-    }
-    // }
-
     return throwError(() => new Error(`${operation} failed: ${error.message}`));
   }
 }
