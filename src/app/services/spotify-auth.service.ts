@@ -24,11 +24,11 @@ export function isSpotifyAuthError(error: unknown): boolean {
   if (typeof error === 'object' && error !== null) {
     const err = error as Record<string, unknown>;
     const status = err['status'] ?? err['statusCode'];
-    if (status === 401 || status === 403) {
+    if (status === 401) {
       return true;
     }
     const response = err['response'] as { status?: number } | undefined;
-    if (response?.status === 401 || response?.status === 403) {
+    if (response?.status === 401) {
       return true;
     }
   }
@@ -36,11 +36,10 @@ export function isSpotifyAuthError(error: unknown): boolean {
   const message = error instanceof Error ? error.message : String(error);
   return (
     message.includes('Bad or expired token') ||
-    message.includes('Failed to refresh token') ||
     message.includes('re-authenticate the user') ||
     message.includes('invalid_grant') ||
     message.includes('invalid_token') ||
-    /\b(401|403)\b/.test(message)
+    /\b401\b/.test(message)
   );
 }
 
@@ -124,9 +123,8 @@ export class SpotifyAuthService {
   }
 
   /**
-   * Ensures that the session is valid and the access token is not expired.
-   * Serializes concurrent calls to a single shared in-flight refresh observable.
-   * Preserves existing refresh_token if omitted in Spotify refresh response.
+   * Ensures that the session is valid and user profile is loaded.
+   * Deduplicates concurrent profile/refresh checks.
    */
   ensureValidSession(): Observable<void> {
     const storedToken = this.getStoredToken();
@@ -146,27 +144,7 @@ export class SpotifyAuthService {
       return this.refreshInFlight$;
     }
 
-    const refresh$ = this.refreshSession(storedToken, isTokenNotExpired).pipe(
-      finalize(() => {
-        if (this.refreshInFlight$ === refresh$) {
-          this.refreshInFlight$ = null;
-        }
-      }),
-      shareReplay({ bufferSize: 1, refCount: false }),
-    );
-
-    this.refreshInFlight$ = refresh$;
-    return refresh$;
-  }
-
-  private refreshSession(
-    storedToken: AccessToken & { expires?: number },
-    isTokenNotExpired: boolean,
-  ): Observable<void> {
-    const tokenRefresh$ = isTokenNotExpired ? of(void 0) : this.performTokenRefresh(storedToken);
-
-    return tokenRefresh$.pipe(
-      switchMap(() => from(this.sdk.currentUser.profile())),
+    const refresh$ = from(this.sdk.currentUser.profile()).pipe(
       tap((profile) => {
         this.userProfileSubject.next(profile);
         this.isAuthenticatedSubject.next(true);
@@ -179,44 +157,14 @@ export class SpotifyAuthService {
         }
         return throwError(() => error);
       }),
-    );
-  }
-
-  private performTokenRefresh(storedToken: AccessToken & { expires?: number }): Observable<void> {
-    if (!storedToken.refresh_token) {
-      this.logout();
-      return throwError(() => new Error('No refresh token available'));
-    }
-
-    const body = new URLSearchParams({
-      client_id: environment.spotifyClientId,
-      grant_type: 'refresh_token',
-      refresh_token: storedToken.refresh_token,
-    });
-
-    return from(
-      fetch('https://accounts.spotify.com/api/token', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: body.toString(),
-      }).then(async (res) => {
-        if (!res.ok) {
-          const text = await res.text();
-          throw new Error(`Failed to refresh token: ${res.statusText}, ${text}`);
-        }
-        return res.json() as Promise<AccessToken>;
+      finalize(() => {
+        this.refreshInFlight$ = null;
       }),
-    ).pipe(
-      tap((refreshed) => {
-        const updatedToken: AccessToken & { expires: number } = {
-          ...refreshed,
-          refresh_token: refreshed.refresh_token || storedToken.refresh_token,
-          expires: Date.now() + (refreshed.expires_in ?? 3600) * 1000,
-        };
-        localStorage.setItem(SpotifyAuthService.SDK_TOKEN_KEY, JSON.stringify(updatedToken));
-      }),
-      map(() => void 0),
+      shareReplay({ bufferSize: 1, refCount: false }),
     );
+
+    this.refreshInFlight$ = refresh$;
+    return refresh$;
   }
 
   /**

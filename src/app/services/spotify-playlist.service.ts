@@ -58,6 +58,9 @@ export class SpotifyPlaylistService {
         return null;
       }),
       catchError((error) => {
+        if (isSpotifyAuthError(error)) {
+          return this.handleError('searchTrack', error);
+        }
         console.error(`Error searching for track "${query}":`, error);
         return of(null);
       }),
