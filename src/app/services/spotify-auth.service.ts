@@ -1,6 +1,18 @@
 import { Injectable } from '@angular/core';
 import { AccessToken, SpotifyApi, UserProfile } from '@spotify/web-api-ts-sdk';
-import { BehaviorSubject, catchError, from, map, Observable, of, switchMap, tap, throwError } from 'rxjs';
+import {
+  BehaviorSubject,
+  catchError,
+  finalize,
+  from,
+  map,
+  Observable,
+  of,
+  shareReplay,
+  switchMap,
+  tap,
+  throwError,
+} from 'rxjs';
 import { environment } from 'src/environments/environment';
 import { SPOTIFY_CONSTANTS } from '../constants/spotify.constants';
 
@@ -50,6 +62,7 @@ export class SpotifyAuthService {
 
   private readonly isAuthenticatedSubject = new BehaviorSubject<boolean>(false);
   readonly isAuthenticated$ = this.isAuthenticatedSubject.asObservable();
+  private refreshInFlight$: Observable<void> | null = null;
 
   /**
    * Retrieves the current access token string from the cached SDK token, if available.
@@ -82,6 +95,7 @@ export class SpotifyAuthService {
    * Logs out the user by clearing the Spotify SDK token and resetting local state.
    */
   logout(): void {
+    this.refreshInFlight$ = null;
     this.sdk.logOut();
     sessionStorage.removeItem(SpotifyAuthService.REDIRECT_STATE_KEY);
     this.userProfileSubject.next(null);
@@ -110,6 +124,102 @@ export class SpotifyAuthService {
   }
 
   /**
+   * Ensures that the session is valid and the access token is not expired.
+   * Serializes concurrent calls to a single shared in-flight refresh observable.
+   * Preserves existing refresh_token if omitted in Spotify refresh response.
+   */
+  ensureValidSession(): Observable<void> {
+    const storedToken = this.getStoredToken();
+    if (!storedToken) {
+      if (this.isAuthenticatedSubject.value || this.userProfileSubject.value) {
+        this.logout();
+      }
+      return throwError(() => new Error('User is not authenticated with Spotify'));
+    }
+
+    const isTokenNotExpired = typeof storedToken.expires === 'number' && storedToken.expires > Date.now() + 60_000;
+    if (isTokenNotExpired && this.isAuthenticatedSubject.value && this.userProfileSubject.value) {
+      return of(void 0);
+    }
+
+    if (this.refreshInFlight$) {
+      return this.refreshInFlight$;
+    }
+
+    const refresh$ = this.refreshSession(storedToken, isTokenNotExpired).pipe(
+      finalize(() => {
+        if (this.refreshInFlight$ === refresh$) {
+          this.refreshInFlight$ = null;
+        }
+      }),
+      shareReplay({ bufferSize: 1, refCount: false }),
+    );
+
+    this.refreshInFlight$ = refresh$;
+    return refresh$;
+  }
+
+  private refreshSession(
+    storedToken: AccessToken & { expires?: number },
+    isTokenNotExpired: boolean,
+  ): Observable<void> {
+    const tokenRefresh$ = isTokenNotExpired ? of(void 0) : this.performTokenRefresh(storedToken);
+
+    return tokenRefresh$.pipe(
+      switchMap(() => from(this.sdk.currentUser.profile())),
+      tap((profile) => {
+        this.userProfileSubject.next(profile);
+        this.isAuthenticatedSubject.next(true);
+      }),
+      map(() => void 0),
+      catchError((error: unknown) => {
+        if (isSpotifyAuthError(error)) {
+          console.warn('Spotify session expired or invalid, logging out:', error);
+          this.logout();
+        }
+        return throwError(() => error);
+      }),
+    );
+  }
+
+  private performTokenRefresh(storedToken: AccessToken & { expires?: number }): Observable<void> {
+    if (!storedToken.refresh_token) {
+      this.logout();
+      return throwError(() => new Error('No refresh token available'));
+    }
+
+    const body = new URLSearchParams({
+      client_id: environment.spotifyClientId,
+      grant_type: 'refresh_token',
+      refresh_token: storedToken.refresh_token,
+    });
+
+    return from(
+      fetch('https://accounts.spotify.com/api/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: body.toString(),
+      }).then(async (res) => {
+        if (!res.ok) {
+          const text = await res.text();
+          throw new Error(`Failed to refresh token: ${res.statusText}, ${text}`);
+        }
+        return res.json() as Promise<AccessToken>;
+      }),
+    ).pipe(
+      tap((refreshed) => {
+        const updatedToken: AccessToken & { expires: number } = {
+          ...refreshed,
+          refresh_token: refreshed.refresh_token || storedToken.refresh_token,
+          expires: Date.now() + (refreshed.expires_in ?? 3600) * 1000,
+        };
+        localStorage.setItem(SpotifyAuthService.SDK_TOKEN_KEY, JSON.stringify(updatedToken));
+      }),
+      map(() => void 0),
+    );
+  }
+
+  /**
    * Checks if the user is authenticated.
    * Keeps cached fast path only when stored token is still valid.
    * Refreshes via SDK when token is expired or profile is missing.
@@ -124,24 +234,12 @@ export class SpotifyAuthService {
       return of(false);
     }
 
-    const isTokenNotExpired = typeof storedToken.expires === 'number' && storedToken.expires > Date.now();
-    if (isTokenNotExpired && this.isAuthenticatedSubject.value && this.userProfileSubject.value) {
-      return of(true);
-    }
-
-    return from(this.sdk.currentUser.profile()).pipe(
-      tap((profile) => {
-        this.userProfileSubject.next(profile);
-        this.isAuthenticatedSubject.next(true);
-      }),
+    return this.ensureValidSession().pipe(
       map(() => true),
       catchError((error: unknown) => {
         if (isSpotifyAuthError(error)) {
-          console.warn('Spotify authentication expired or invalid, logging out:', error);
-          this.logout();
           return of(false);
         }
-        console.error('Transient error while verifying Spotify profile:', error);
         return throwError(() => error);
       }),
     );
@@ -151,23 +249,7 @@ export class SpotifyAuthService {
    * Fetches the user profile from Spotify or returns the cached profile.
    */
   getProfile(): Observable<UserProfile> {
-    const cached = this.userProfileSubject.value;
-    if (cached) {
-      return of(cached);
-    }
-
-    return from(this.sdk.currentUser.profile()).pipe(
-      tap((profile) => {
-        this.userProfileSubject.next(profile);
-        this.isAuthenticatedSubject.next(true);
-      }),
-      catchError((error: unknown) => {
-        if (isSpotifyAuthError(error)) {
-          this.logout();
-        }
-        return throwError(() => error);
-      }),
-    );
+    return this.ensureValidSession().pipe(map(() => this.userProfileSubject.value!));
   }
 
   /**

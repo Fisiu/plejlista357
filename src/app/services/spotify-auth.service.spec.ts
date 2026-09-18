@@ -129,6 +129,11 @@ describe('SpotifyAuthService', () => {
     it('should verify with SDK when token is expired and return true if refresh succeeds', (done) => {
       const expiredToken = { ...mockToken, expires: Date.now() - 5000 };
       localStorage.setItem('spotify-sdk:AuthorizationCodeWithPKCEStrategy:token', JSON.stringify(expiredToken));
+      spyOn(window, 'fetch').and.returnValue(
+        Promise.resolve(
+          new Response(JSON.stringify({ access_token: 'new_token', expires_in: 3600, refresh_token: 'new_refresh' })),
+        ),
+      );
       spyOn(service.sdk.currentUser, 'profile').and.returnValue(Promise.resolve(mockProfile));
 
       service.isAuthenticated().subscribe((isAuth) => {
@@ -140,6 +145,11 @@ describe('SpotifyAuthService', () => {
     it('should logout and return false when SDK returns 401/expired error', (done) => {
       const expiredToken = { ...mockToken, expires: Date.now() - 5000 };
       localStorage.setItem('spotify-sdk:AuthorizationCodeWithPKCEStrategy:token', JSON.stringify(expiredToken));
+      spyOn(window, 'fetch').and.returnValue(
+        Promise.resolve(
+          new Response(JSON.stringify({ access_token: 'new_token', expires_in: 3600, refresh_token: 'new_refresh' })),
+        ),
+      );
       spyOn(service.sdk.currentUser, 'profile').and.returnValue(
         Promise.reject(new Error('Bad or expired token. You should re-authenticate the user.')),
       );
@@ -155,6 +165,11 @@ describe('SpotifyAuthService', () => {
     it('should rethrow error and NOT logout when profile fetch encounters a transient 500/network error', (done) => {
       const expiredToken = { ...mockToken, expires: Date.now() - 5000 };
       localStorage.setItem('spotify-sdk:AuthorizationCodeWithPKCEStrategy:token', JSON.stringify(expiredToken));
+      spyOn(window, 'fetch').and.returnValue(
+        Promise.resolve(
+          new Response(JSON.stringify({ access_token: 'new_token', expires_in: 3600, refresh_token: 'new_refresh' })),
+        ),
+      );
       spyOn(service.sdk.currentUser, 'profile').and.returnValue(
         Promise.reject(new Error('NetworkError: Failed to fetch')),
       );
@@ -168,6 +183,38 @@ describe('SpotifyAuthService', () => {
           done();
         },
       });
+    });
+  });
+
+  describe('ensureValidSession', () => {
+    it('should share single in-flight refresh observable across concurrent callers', (done) => {
+      const expiredToken = { ...mockToken, expires: Date.now() - 5000 };
+      localStorage.setItem('spotify-sdk:AuthorizationCodeWithPKCEStrategy:token', JSON.stringify(expiredToken));
+
+      const fetchSpy = spyOn(window, 'fetch').and.returnValue(
+        Promise.resolve(new Response(JSON.stringify({ access_token: 'refreshed_token', expires_in: 3600 }))),
+      );
+      const profileSpy = spyOn(service.sdk.currentUser, 'profile').and.returnValue(Promise.resolve(mockProfile));
+
+      let completed = 0;
+      const onComplete = () => {
+        completed++;
+        if (completed === 3) {
+          expect(fetchSpy).toHaveBeenCalledTimes(1);
+          expect(profileSpy).toHaveBeenCalledTimes(1);
+
+          // Verify preserved refresh_token in storage
+          const tokenKey = 'spotify-sdk:AuthorizationCodeWithPKCEStrategy:token';
+          const stored = JSON.parse(localStorage.getItem(tokenKey)!);
+          expect(stored.access_token).toBe('refreshed_token');
+          expect(stored.refresh_token).toBe(mockToken.refresh_token);
+          done();
+        }
+      };
+
+      service.ensureValidSession().subscribe(onComplete);
+      service.ensureValidSession().subscribe(onComplete);
+      service.ensureValidSession().subscribe(onComplete);
     });
   });
 

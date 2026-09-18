@@ -25,17 +25,20 @@ export class SpotifyPlaylistService {
 
   /**
    * Gets the user's playlists using Spotify SDK.
+   * Awaits session validation/token refresh before issuing request.
    * @param limit Number of playlists to retrieve
    * @param offset Offset for pagination
    */
   getUserPlaylists(limit: MaxInt<50> = 20, offset = 0): Observable<Page<SimplifiedPlaylist>> {
-    return from(this.sdk.currentUser.playlists.playlists(limit, offset)).pipe(
+    return this.spotifyAuthService.ensureValidSession().pipe(
+      switchMap(() => from(this.sdk.currentUser.playlists.playlists(limit, offset))),
       catchError((error) => this.handleError('getUserPlaylists', error)),
     );
   }
 
   /**
    * Searches for a specific track by artist and name.
+   * Awaits session validation/token refresh before issuing request.
    * @param artist Artist name
    * @param trackName Track name
    * @param position Source chart position
@@ -44,7 +47,8 @@ export class SpotifyPlaylistService {
   searchTrack(artist: string, trackName: string, position: number): Observable<MyTrack | null> {
     const query = `${artist} - ${trackName}`;
 
-    return from(this.sdk.search(query, ['track'], undefined, 1)).pipe(
+    return this.spotifyAuthService.ensureValidSession().pipe(
+      switchMap(() => from(this.sdk.search(query, ['track'], undefined, 1))),
       map((results) => {
         const track = results.tracks.items[0];
         if (track) {
@@ -109,11 +113,13 @@ export class SpotifyPlaylistService {
 
   /**
    * Adds tracks to a playlist in batches.
+   * Awaits session validation/token refresh before issuing request.
    * @param playlistId Playlist ID
    * @param trackUris Array of track URIs
    */
   addTracksToPlaylist(playlistId: string, trackUris: string[]): Observable<void> {
-    return from(this.sdk.playlists.addItemsToPlaylist(playlistId, trackUris)).pipe(
+    return this.spotifyAuthService.ensureValidSession().pipe(
+      switchMap(() => from(this.sdk.playlists.addItemsToPlaylist(playlistId, trackUris))),
       map(() => void 0),
       catchError((error) => this.handleError('addTracksToPlaylist', error)),
     );
@@ -164,11 +170,13 @@ export class SpotifyPlaylistService {
 
   /**
    * Deletes a playlist by unfollowing it.
+   * Awaits session validation/token refresh before issuing request.
    * @param playlistId ID of the playlist to delete
    * @returns Observable that completes when the playlist is deleted
    */
   deletePlaylist(playlistId: string): Observable<void> {
-    return from(this.sdk.currentUser.playlists.unfollow(playlistId)).pipe(
+    return this.spotifyAuthService.ensureValidSession().pipe(
+      switchMap(() => from(this.sdk.currentUser.playlists.unfollow(playlistId))),
       map(() => void 0),
       catchError((error) => this.handleError('deletePlaylist', error)),
     );
