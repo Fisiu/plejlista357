@@ -1,10 +1,37 @@
 {
-    "editor.formatOnSave": true,
-    "[typescript]": {
-        "editor.codeActionsOnSave": {
-            "source.sortImports": "explicit",
-            "source.organizeImports": "explicit",
-            "source.removeUnusedImports": "explicit"
-        }
-    }
+  "explorer.fileNesting.enabled": true,
+  "explorer.fileNesting.patterns": {
+    "tsconfig.json": "tsconfig.*.json, env.d.ts, typed-router.d.ts",
+    "vite.config.*": "jsconfig*, vitest.config.*, cypress.config.*, playwright.config.*",
+    "package.json": "package-lock.json, pnpm*, .yarnrc*, yarn*, .eslint*, eslint*, .oxlint*, oxlint*, .oxfmt*, .prettier*, prettier*, .editorconfig, bun.lock, nub.lock"
+  },
+  "js/ts.tsdk.path": "node_modules/typescript/lib",
+  "js/ts.tsdk.promptToUseWorkspaceVersion": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll": "explicit"
+  },
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "oxc.oxc-vscode",
+  "tailwindCSS.classAttributes": [
+    "class",
+    "ui"
+  ],
+  "editor.quickSuggestions": {
+    "strings": "on"
+  },
+  "files.associations": {
+    "*.css": "tailwindcss"
+  },
+  "tailwindCSS.classFunctions": [
+    "defineAppConfig"
+  ],
+  "tailwindCSS.includeLanguages": {
+    "vue": "html"
+  },
+  "tailwindCSS.experimental.classRegex": [
+    "class=\\\\s*\"([^\"]*)\"",
+    "class=\\\\s*'([^']*)'",
+    ":class=\\\\s*\"([^\"]*)\"",
+    ":class=\\\\s*'([^']*)'"
+  ]
 }

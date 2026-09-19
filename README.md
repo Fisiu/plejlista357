@@ -1,59 +1,75 @@
-# Plejlista357
+# .
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 19.1.8.
+This template should help get you started developing with Vue 3 in Vite.
 
-## Development server
+## Recommended IDE Setup
 
-To start a local development server, run:
+[VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
 
-```bash
-ng serve
+This project replaces its workspace TypeScript package with [typescript-native-bridge](https://github.com/johnsoncodehk/typescript-native-bridge). Command-line tools use the bridge automatically. To use it in VS Code after installing dependencies, accept the prompt to use the workspace TypeScript version. If the prompt does not appear, run **TypeScript: Select TypeScript Version** and choose **Use Workspace Version**.
+
+## Recommended Browser Setup
+
+- Chromium-based browsers (Chrome, Edge, Brave, etc.):
+  - [Vue.js devtools](https://chromewebstore.google.com/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd)
+  - [Turn on Custom Object Formatter in Chrome DevTools](http://bit.ly/object-formatters)
+- Firefox:
+  - [Vue.js devtools](https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/)
+  - [Turn on Custom Object Formatter in Firefox DevTools](https://fxdx.dev/firefox-devtools-custom-object-formatters/)
+
+## Type Support for `.vue` Imports in TS
+
+TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) to make the TypeScript language service aware of `.vue` types.
+
+## Customize configuration
+
+See [Vite Configuration Reference](https://vite.dev/config/).
+
+## Project Setup
+
+```sh
+pnpm install
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+### Compile and Hot-Reload for Development
 
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
-
-```bash
-ng generate component component-name
+```sh
+pnpm dev
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+### Type-Check, Compile and Minify for Production
 
-```bash
-ng generate --help
+```sh
+pnpm build
 ```
 
-## Building
+### Run Unit Tests with [Vitest](https://vitest.dev/)
 
-To build the project run:
-
-```bash
-ng build
+```sh
+pnpm test:unit
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+### Run End-to-End Tests with [Playwright](https://playwright.dev)
 
-## Running unit tests
+```sh
+# Install browsers for the first run
+npx playwright install
 
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
+# When testing on CI, must build the project first
+pnpm build
 
-```bash
-ng test
+# Runs the end-to-end tests
+pnpm test:e2e
+# Runs the tests only on Chromium
+pnpm test:e2e --project=chromium
+# Runs the tests of a specific file
+pnpm test:e2e tests/example.spec.ts
+# Runs the tests in debug mode
+pnpm test:e2e --debug
 ```
 
-## Running end-to-end tests
+### Lint with [ESLint](https://eslint.org/)
 
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
+```sh
+pnpm lint
 ```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
