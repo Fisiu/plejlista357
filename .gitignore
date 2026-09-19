@@ -17,6 +17,9 @@ coverage
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
 .idea
 *.suo
 *.ntvs*
@@ -28,10 +31,6 @@ coverage
 
 .eslintcache
 
-# Cypress
-/cypress/videos/
-/cypress/screenshots/
-
 # Vitest
 __screenshots__/
 
@@ -40,8 +39,6 @@ __screenshots__/
 
 test-results/
 playwright-report/
-
-!.vscode/settings.json
 
 # Auto-generated type declarations
 auto-imports.d.ts
