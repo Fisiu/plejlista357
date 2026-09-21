@@ -11,6 +11,9 @@
     "src/**/__tests__/*"
   ],
   "compilerOptions": {
+    "types": [
+      "vite/client"
+    ],
     // Extra safety for array and object lookups, but may have false positives.
     "noUncheckedIndexedAccess": true,
     // Path mapping for cleaner imports.
