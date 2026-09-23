@@ -39,6 +39,6 @@ describe("App", () => {
       },
     });
 
-    expect(wrapper.text()).toContain("Built with Nuxt UI");
+    expect(wrapper.text()).toContain("Plejlista 357");
   });
 });

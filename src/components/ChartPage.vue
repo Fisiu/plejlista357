@@ -143,9 +143,10 @@ onUnmounted(() => controller.abort());
               <li v-for="item in mainChartItems" :key="item.id"
                 class="grid grid-cols-[4rem_minmax(0,1fr)] items-center gap-3 border-b border-default px-4 py-2.5 transition-colors duration-150 hover:bg-elevated/50 last:border-0 sm:grid-cols-[4rem_minmax(0,1fr)] sm:gap-4">
                 <div class="flex select-none items-center gap-1">
-                  <span class="text-sm tabular-nums text-muted">{{ item.position }}</span>
+                  <span class="w-6 shrink-0 text-right text-sm tabular-nums text-muted">{{ item.position }}</span>
                   <sup>
-                    <UBadge :color="changeColor(item.change)" variant="outline" size="sm" class="tabular-nums">
+                    <UBadge :color="changeColor(item.change)" variant="soft" size="sm"
+                      class="min-w-9 justify-center tabular-nums">
                       {{ changeLabel(item.change) }}
                     </UBadge>
                   </sup>
