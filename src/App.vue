@@ -1,11 +1,29 @@
 <script setup lang="ts">
 import { useHead } from '@unhead/vue';
 import { useColorMode } from '@vueuse/core';
-import { computed } from 'vue';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
 
 
 const colorMode = useColorMode();
 const themeColor = computed(() => colorMode.value === 'dark' ? '#18181b' : '#ffffff')
+const showScrollTop = ref(false);
+
+const updateScrollTopVisibility = () => {
+  showScrollTop.value = window.scrollY > 240;
+};
+
+const scrollToTop = () => {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+onMounted(() => {
+  updateScrollTopVisibility();
+  window.addEventListener('scroll', updateScrollTopVisibility, { passive: true });
+});
+
+onUnmounted(() => {
+  window.removeEventListener('scroll', updateScrollTopVisibility);
+});
 
 interface NavigationItem {
   label: string
@@ -41,13 +59,11 @@ useHead({
         </template>
 
         <template #default>
-          <UNavigation>
-            <UNavigationMenu :items="navigationItems">
-              <template #item="{ item }: { item: NavigationItem }">
-                {{ item.shortLabel }}
-              </template>
-            </UNavigationMenu>
-          </UNavigation>
+          <UNavigationMenu :items="navigationItems" />
+        </template>
+
+        <template #body>
+          <UNavigationMenu :items="navigationItems" orientation="vertical" class="w-full" />
         </template>
 
         <template #right>
@@ -65,6 +81,9 @@ useHead({
       <UMain class="flex-1 min-h-0!">
         <RouterView />
       </UMain>
+
+      <UButton v-if="showScrollTop" icon="i-lucide-arrow-up" aria-label="Wróć na górę" title="Wróć na górę"
+        color="neutral" variant="solid" class="fixed right-4 bottom-4 z-50 shadow-lg" @click="scrollToTop" />
 
       <USeparator icon="simple-icons:vuedotjs" />
 

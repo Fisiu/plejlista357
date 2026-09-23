@@ -13,17 +13,17 @@ const routes: readonly RouteRecordRaw[] = [
   {
     path: "/weekly",
     name: "weekly",
-    component: () => import("@/pages/weekly.vue"),
+    component: () => import("@/pages/charts/weekly.vue"),
   },
   {
     path: "/top",
     name: "top",
-    component: () => import("@/pages/top.vue"),
+    component: () => import("@/pages/charts/top.vue"),
   },
   {
     path: "/top-pl",
     name: "top-pl",
-    component: () => import("@/pages/top-pl.vue"),
+    component: () => import("@/pages/charts/top-pl.vue"),
   },
   {
     path: "/:pathMatch(.*)*",

@@ -135,18 +135,20 @@ onUnmounted(() => controller.abort());
 
           <UCard v-else :ui="{ body: 'p-0 sm:p-0' }">
             <div
-              class="hidden grid-cols-[3rem_minmax(0,1fr)] items-center gap-4 border-b border-default px-4 py-2 text-xs font-medium uppercase tracking-wide text-muted sm:grid">
+              class="hidden grid-cols-[4rem_minmax(0,1fr)] items-center gap-4 border-b border-default px-4 py-2 text-xs font-medium uppercase tracking-wide text-muted sm:grid">
               <span class="select-none">#</span>
               <span>Utwór</span>
             </div>
             <ol>
               <li v-for="item in mainChartItems" :key="item.id"
-                class="grid grid-cols-[3rem_minmax(0,1fr)] items-center gap-3 border-b border-default px-4 py-2.5 transition-colors duration-150 hover:bg-elevated/50 last:border-0 sm:grid-cols-[3rem_minmax(0,1fr)] sm:gap-4">
+                class="grid grid-cols-[4rem_minmax(0,1fr)] items-center gap-3 border-b border-default px-4 py-2.5 transition-colors duration-150 hover:bg-elevated/50 last:border-0 sm:grid-cols-[4rem_minmax(0,1fr)] sm:gap-4">
                 <div class="flex select-none items-center gap-1">
                   <span class="text-sm tabular-nums text-muted">{{ item.position }}</span>
-                  <UBadge :color="changeColor(item.change)" variant="subtle" size="xs" class="tabular-nums">
-                    {{ changeLabel(item.change) }}
-                  </UBadge>
+                  <sup>
+                    <UBadge :color="changeColor(item.change)" variant="outline" size="sm" class="tabular-nums">
+                      {{ changeLabel(item.change) }}
+                    </UBadge>
+                  </sup>
                 </div>
                 <div class="min-w-0 select-text">
                   <div class="flex min-w-0 items-center gap-2">
