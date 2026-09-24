@@ -26,6 +26,11 @@ const routes: readonly RouteRecordRaw[] = [
     component: () => import("@/pages/charts/top-pl.vue"),
   },
   {
+    path: "/spotify-callback",
+    name: "spotify-callback",
+    component: () => import("@/pages/spotify-callback.vue"),
+  },
+  {
     path: "/:pathMatch(.*)*",
     name: "not-found",
     component: () => import("@/pages/not-found.vue"),

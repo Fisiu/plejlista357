@@ -1,4 +1,5 @@
 import { createHead } from "@unhead/vue/client";
+import { createPinia } from "pinia";
 import { mount } from "@vue/test-utils";
 import { describe, expect, it, vi } from "vitest";
 
@@ -14,7 +15,7 @@ describe("App", () => {
 
     const wrapper = mount(App, {
       global: {
-        plugins: [router, createHead()],
+        plugins: [router, createHead(), createPinia()],
       },
     });
 
@@ -35,7 +36,7 @@ describe("App", () => {
 
     const wrapper = mount(App, {
       global: {
-        plugins: [router, createHead()],
+        plugins: [router, createHead(), createPinia()],
       },
     });
 

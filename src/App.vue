@@ -71,10 +71,8 @@ useHead({
 
           <!-- Reserved container for Spotify Auth (Login / User Profile Avatar) -->
           <div class="flex items-center gap-2">
-            <!-- Future: <SpotifyAuthButton /> -->
+            <SpotifyAuthButton />
           </div>
-          <UButton to="https://github.com/nuxt-ui-templates/starter-vue" target="_blank" icon="simple-icons:github"
-            aria-label="GitHub" color="neutral" variant="ghost" />
         </template>
       </UHeader>
 
