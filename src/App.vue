@@ -83,7 +83,8 @@ useHead({
       </UMain>
 
       <UButton v-if="showScrollTop" icon="i-lucide-arrow-up" aria-label="Wróć na górę" title="Wróć na górę"
-        color="neutral" variant="solid" class="fixed right-4 bottom-4 z-50 shadow-lg" @click="scrollToTop" />
+        color="neutral" variant="solid" class="fixed right-4 bottom-4 z-50 cursor-pointer shadow-lg"
+        @click="scrollToTop" />
 
       <USeparator icon="simple-icons:vuedotjs" />
 
