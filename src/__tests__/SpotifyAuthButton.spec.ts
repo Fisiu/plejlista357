@@ -1,5 +1,6 @@
 import { flushPromises, mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { createMemoryHistory, createRouter } from "vue-router"; // 1. Import router helpers
 
 const mocks = vi.hoisted(() => ({
   spotify: {
@@ -21,8 +22,16 @@ vi.mock("@/stores/spotify", () => ({
 import SpotifyAuthButton from "@/components/SpotifyAuthButton.vue";
 
 function mountButton() {
+  const router = createRouter({
+    history: createMemoryHistory(),
+    routes: [{ path: "/", component: { template: "<div />" } }],
+  });
+
   return mount(SpotifyAuthButton, {
     attachTo: document.body,
+    global: {
+      plugins: [router],
+    },
   });
 }
 

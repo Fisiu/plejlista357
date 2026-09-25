@@ -1,15 +1,18 @@
 import { createHead } from "@unhead/vue/client";
 import { createPinia } from "pinia";
 import { mount } from "@vue/test-utils";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi, type MockInstance } from "vitest";
 
 import App from "../App.vue";
 import router from "../router";
 
 describe("App", () => {
-  it("shows a button to return to the top after scrolling", async () => {
-    const scrollTo = vi.spyOn(window, "scrollTo").mockImplementation(() => {});
+  let scrollToSpy: MockInstance;
+  beforeEach(() => {
+    scrollToSpy = vi.spyOn(window, "scrollTo").mockImplementation(() => {});
+  });
 
+  it("shows a button to return to the top after scrolling", async () => {
     await router.push("/");
     await router.isReady();
 
@@ -26,8 +29,7 @@ describe("App", () => {
     const scrollTopButton = wrapper.get('button[aria-label="Wróć na górę"]');
 
     await scrollTopButton.trigger("click");
-    expect(scrollTo).toHaveBeenCalledWith({ top: 0, behavior: "smooth" });
-    scrollTo.mockRestore();
+    expect(scrollToSpy).toHaveBeenCalledWith({ top: 0, behavior: "smooth" });
   });
 
   it("renders the application shell", async () => {

@@ -8,12 +8,19 @@ const props = defineProps<{
   chartType: ChartType;
 }>();
 
+const chartStorageKey = `radio-chart:${props.chartType}`;
 const chart = ref<Chart>();
 const chartNumber = ref(0);
 const latestChartNumber = ref(0);
 const isLoading = ref(true);
 const error = ref<Error>();
-const controller = new AbortController();
+
+// 1. Shared AbortController only for component unmount
+const unmountController = new AbortController();
+
+// 2. Shared request counter across both load functions
+let latestRequestId = 0;
+
 const chartNumberInput = computed({
   get: () => chartNumber.value,
   set: (value: number | undefined) => {
@@ -22,42 +29,79 @@ const chartNumberInput = computed({
 });
 const mainChartItems = computed(() => [...(chart.value?.results.mainChart.items ?? [])].reverse());
 
-async function loadChart(number: number, loadedChart?: Chart): Promise<void> {
-  if (number < 1 || number > latestChartNumber.value) {
+async function loadChart(number: number, loadedChart?: Chart, inheritedRequestId?: number): Promise<void> {
+  if (number < 1 || (latestChartNumber.value > 0 && number > latestChartNumber.value)) {
     return;
   }
+
+  // Use the requestId passed from loadLatestChart, or generate a fresh one
+  const requestId = inheritedRequestId ?? ++latestRequestId;
 
   isLoading.value = true;
   error.value = undefined;
 
   try {
-    // Reuse the latest response instead of requesting the same chart by number.
-    chart.value = loadedChart ?? (await getChartByNumber(props.chartType, number, controller.signal));
+    const data = loadedChart ?? (await getChartByNumber(props.chartType, number, unmountController.signal));
+
+    // Stale check: discard if a newer request was started
+    if (requestId !== latestRequestId) return;
+
+    chart.value = data;
     chartNumber.value = number;
   } catch (loadError) {
-    if (controller.signal.aborted) return;
+    if (unmountController.signal.aborted || requestId !== latestRequestId) return;
     error.value = loadError instanceof Error ? loadError : new Error('Nie udało się pobrać listy');
   } finally {
-    if (!controller.signal.aborted) {
+    if (requestId === latestRequestId && !unmountController.signal.aborted) {
       isLoading.value = false;
     }
   }
 }
 
-async function loadLatestChart(): Promise<void> {
+async function loadLatestChart(forceLatest = false): Promise<void> {
+  const requestId = ++latestRequestId;
+
   isLoading.value = true;
   error.value = undefined;
 
   try {
-    const latestChart = await getLatestChart(props.chartType, controller.signal);
+    const latestChart = await getLatestChart(props.chartType, unmountController.signal);
+
+    // Stale check after fetching latest issue info
+    if (requestId !== latestRequestId) return;
+
     const latestNumber = Number(latestChart.no);
     latestChartNumber.value = latestNumber;
-    await loadChart(latestNumber, latestChart);
+
+    let savedNumber: string | null = null;
+    try {
+      savedNumber = forceLatest ? null : sessionStorage.getItem(chartStorageKey);
+    } catch {
+      // Graceful fallback if storage is blocked
+    }
+
+    const requestedNumber = Number(savedNumber);
+    const initialNumber =
+      Number.isInteger(requestedNumber) && requestedNumber >= 1 && requestedNumber <= latestNumber
+        ? requestedNumber
+        : latestNumber;
+
+    try {
+      sessionStorage.setItem(chartStorageKey, String(initialNumber));
+    } catch {
+      // Graceful fallback if storage is blocked
+    }
+
+    if (initialNumber === latestNumber) {
+      await loadChart(latestNumber, latestChart, requestId);
+    } else {
+      await loadChart(initialNumber, undefined, requestId);
+    }
   } catch (loadError) {
-    if (controller.signal.aborted) return;
+    if (unmountController.signal.aborted || requestId !== latestRequestId) return;
     error.value = loadError instanceof Error ? loadError : new Error('Nie udało się pobrać listy');
   } finally {
-    if (!controller.signal.aborted) {
+    if (requestId === latestRequestId && !unmountController.signal.aborted) {
       isLoading.value = false;
     }
   }
@@ -67,6 +111,11 @@ function onChartNumberValue(value: string | number): void {
   const number = Number(value);
 
   if (Number.isInteger(number)) {
+    try {
+      sessionStorage.setItem(chartStorageKey, String(number));
+    } catch {
+      // Graceful fallback if storage is blocked
+    }
     void loadChart(number);
   }
 }
@@ -84,7 +133,7 @@ function changeLabel(change: number | false): string {
 }
 
 onMounted(() => void loadLatestChart());
-onUnmounted(() => controller.abort());
+onUnmounted(() => unmountController.abort());
 </script>
 
 <template>
@@ -99,7 +148,12 @@ onUnmounted(() => controller.abort());
           <UCard class="mb-6">
             <div class="grid gap-6 lg:grid-cols-[1fr_auto_1fr] lg:items-center">
               <div class="flex flex-col items-center text-center lg:items-start lg:text-left">
-                <p class="text-lg font-semibold text-highlighted">{{ chart.name }}</p>
+                <div class="flex items-center gap-2">
+                  <p class="text-lg font-semibold text-highlighted">{{ chart.name }}</p>
+                  <UButton icon="i-lucide-list-restart" color="neutral" variant="ghost" size="sm" :disabled="isLoading"
+                    class="cursor-pointer" aria-label="Najnowsze notowanie" title="Najnowsze notowanie"
+                    @click="loadLatestChart(true)" />
+                </div>
                 <p class="text-sm text-muted">{{ chart.title }} · {{ chart.published_at_date }}</p>
               </div>
 

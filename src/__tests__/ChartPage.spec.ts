@@ -1,7 +1,8 @@
 import { flushPromises, mount } from "@vue/test-utils";
 import ui from "@nuxt/ui/vue-plugin";
 import { defineComponent, h, nextTick } from "vue";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { createMemoryHistory, createRouter } from "vue-router";
 
 import ChartPage from "@/components/ChartPage.vue";
 import { getChartByNumber, getLatestChart } from "@/api/radioCharts";
@@ -62,18 +63,44 @@ const inputNumberStub = defineComponent({
   },
 });
 
+const buttonStub = defineComponent({
+  props: {
+    ariaLabel: { type: String, default: undefined },
+    label: { type: String, default: "" },
+    disabled: { type: Boolean, default: false },
+  },
+  emits: ["click"],
+  setup(props, { emit }) {
+    return () =>
+      h(
+        "button",
+        {
+          "aria-label": props.ariaLabel,
+          disabled: props.disabled,
+          onClick: () => emit("click"),
+        },
+        props.label,
+      );
+  },
+});
+
 function mountChart(chartType: "top" | "top-pl") {
+  const router = createRouter({
+    history: createMemoryHistory(),
+    routes: [{ path: "/", component: { template: "<div />" } }],
+  });
+
   return mount(ChartPage, {
     props: { chartType },
     global: {
-      plugins: [ui],
+      plugins: [ui, router],
       stubs: {
         UPage: passthroughStub,
         UPageBody: passthroughStub,
         UCard: passthroughStub,
         UAlert: passthroughStub,
         UProgress: passthroughStub,
-        UButton: passthroughStub,
+        UButton: buttonStub,
         UBadge: passthroughStub,
         UInputNumber: inputNumberStub,
       },
@@ -83,8 +110,14 @@ function mountChart(chartType: "top" | "top-pl") {
 
 describe("ChartPage", () => {
   beforeEach(() => {
+    vi.clearAllMocks();
     vi.mocked(getLatestChart).mockResolvedValue(latestChart);
     vi.mocked(getChartByNumber).mockResolvedValue(numberedChart);
+  });
+
+  afterEach(() => {
+    window.history.replaceState({}, "", "/weekly");
+    sessionStorage.clear();
   });
 
   it("loads the latest chart for the requested chart type", async () => {
@@ -109,5 +142,30 @@ describe("ChartPage", () => {
 
     expect(getChartByNumber).toHaveBeenCalledWith("top", 1, expect.any(AbortSignal));
     expect(wrapper.text()).toContain("Lista Piosenek #1");
+  });
+
+  it("restores the last issue separately for each chart type", async () => {
+    sessionStorage.setItem("radio-chart:top", "1");
+
+    mountChart("top");
+
+    await flushPromises();
+
+    expect(getChartByNumber).toHaveBeenCalledWith("top", 1, expect.any(AbortSignal));
+    expect(window.location.search).toBe("");
+  });
+
+  it("loads the latest issue when requested explicitly", async () => {
+    sessionStorage.setItem("radio-chart:top", "1");
+
+    const wrapper = mountChart("top");
+    await flushPromises();
+
+    await wrapper.get('button[aria-label="Najnowsze notowanie"]').trigger("click");
+    await flushPromises();
+
+    expect(getLatestChart).toHaveBeenCalledTimes(2);
+    expect(sessionStorage.getItem("radio-chart:top")).toBe("2");
+    expect(wrapper.text()).toContain("Lista Piosenek #2");
   });
 });

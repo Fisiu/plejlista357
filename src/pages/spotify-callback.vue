@@ -20,7 +20,12 @@ onMounted(async () => {
 
   try {
     await spotify.handleCallback();
-    await router.replace("/weekly");
+    const returnPath = sessionStorage.getItem(spotify.returnPathStorageKey);
+    sessionStorage.removeItem(spotify.returnPathStorageKey);
+    const safeReturnPath = returnPath?.startsWith("/") && !returnPath.startsWith("//") && !returnPath.startsWith("/\\")
+      ? returnPath
+      : "/";
+    await router.replace(safeReturnPath);
   } catch (err) {
     errorMessage.value = err instanceof Error ? err.message : "Nie udało się dokończyć autoryzacji.";
   }

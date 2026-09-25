@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   },
   spotify: {
     handleCallback: vi.fn(),
+    returnPathStorageKey: "spotify:return-path",
   },
 }));
 
@@ -50,16 +51,39 @@ describe("spotify-callback.vue", () => {
     mocks.route.query = {};
     mocks.replace.mockReset();
     mocks.spotify.handleCallback.mockReset();
+    sessionStorage.clear();
   });
 
-  it("handles successful callback and navigates to /weekly", async () => {
+  it("handles successful callback and navigates to the app fallback", async () => {
     mocks.spotify.handleCallback.mockResolvedValueOnce(undefined);
 
     mountCallback();
     await flushPromises();
 
     expect(mocks.spotify.handleCallback).toHaveBeenCalledOnce();
-    expect(mocks.replace).toHaveBeenCalledWith("/weekly");
+    expect(mocks.replace).toHaveBeenCalledWith("/");
+  });
+
+  it("redirects to the saved return path when present in sessionStorage", async () => {
+    sessionStorage.setItem("spotify:return-path", "/top");
+    mocks.spotify.handleCallback.mockResolvedValueOnce(undefined);
+
+    mountCallback();
+    await flushPromises();
+
+    expect(mocks.replace).toHaveBeenCalledWith("/top");
+    expect(sessionStorage.getItem("spotify:return-path")).toBeNull();
+  });
+
+  it("falls back to root if the saved return path is protocol-relative", async () => {
+    sessionStorage.setItem("spotify:return-path", "//example.com");
+    mocks.spotify.handleCallback.mockResolvedValueOnce(undefined);
+
+    mountCallback();
+    await flushPromises();
+
+    expect(mocks.replace).toHaveBeenCalledWith("/");
+    expect(sessionStorage.getItem("spotify:return-path")).toBeNull();
   });
 
   it("displays error alert when Spotify returns an error query parameter", async () => {

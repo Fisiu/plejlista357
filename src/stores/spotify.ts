@@ -3,6 +3,7 @@ import { defineStore } from "pinia";
 import { computed, ref } from "vue";
 
 const scopes = ["playlist-modify-private", "playlist-modify-public", "user-read-private"];
+const returnPathStorageKey = "spotify:return-path";
 
 export const useSpotifyStore = defineStore("spotify", () => {
   const clientId = import.meta.env.VITE_SPOTIFY_CLIENT_ID;
@@ -92,6 +93,11 @@ export const useSpotifyStore = defineStore("spotify", () => {
     error.value = undefined;
 
     try {
+      const currentUrl = new URL(window.location.href);
+      sessionStorage.setItem(
+        returnPathStorageKey,
+        `${currentUrl.pathname}${currentUrl.search}${currentUrl.hash}`,
+      );
       await sdk.authenticate();
     } catch (e) {
       error.value = e instanceof Error ? e.message : "Nie udało się połączyć ze Spotify";
@@ -116,5 +122,6 @@ export const useSpotifyStore = defineStore("spotify", () => {
     isAuthenticated,
     isConfigured,
     isLoading,
+    returnPathStorageKey,
   };
 });
