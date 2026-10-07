@@ -1,5 +1,6 @@
 import { flushPromises, mount } from "@vue/test-utils";
 import ui from "@nuxt/ui/vue-plugin";
+import { createPinia } from "pinia";
 import { defineComponent, h, nextTick } from "vue";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createMemoryHistory, createRouter } from "vue-router";
@@ -85,6 +86,7 @@ const buttonStub = defineComponent({
 });
 
 function mountChart(chartType: "top" | "top-pl") {
+  const pinia = createPinia();
   const router = createRouter({
     history: createMemoryHistory(),
     routes: [{ path: "/", component: { template: "<div />" } }],
@@ -93,7 +95,7 @@ function mountChart(chartType: "top" | "top-pl") {
   return mount(ChartPage, {
     props: { chartType },
     global: {
-      plugins: [ui, router],
+      plugins: [ui, router, pinia],
       stubs: {
         UPage: passthroughStub,
         UPageBody: passthroughStub,

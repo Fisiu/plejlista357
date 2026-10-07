@@ -148,7 +148,7 @@ onUnmounted(() => unmountController.abort());
           <UCard class="mb-6">
             <div class="grid gap-6 lg:grid-cols-[1fr_auto_1fr] lg:items-center">
               <div class="flex flex-col items-center text-center lg:items-start lg:text-left">
-                <div class="flex items-center gap-2">
+                <div class="flex flex-wrap items-center justify-center gap-2 lg:justify-start">
                   <p class="text-lg font-semibold text-highlighted">{{ chart.name }}</p>
                   <UButton icon="i-lucide-list-restart" color="neutral" variant="ghost" size="sm" :disabled="isLoading"
                     class="cursor-pointer" aria-label="Najnowsze notowanie" title="Najnowsze notowanie"
@@ -164,6 +164,7 @@ onUnmounted(() => unmountController.abort());
                     increment-icon="i-lucide-arrow-right" decrement-icon="i-lucide-arrow-left" :min="1"
                     :max="latestChartNumber" :step="1" :disabled="isLoading" />
                 </div>
+                <PlaylistExportDialog :chart-title="chart.name + ' - ' + chart.title" />
               </div>
 
               <div class="flex flex-wrap justify-center gap-x-6 gap-y-3 lg:justify-end">
