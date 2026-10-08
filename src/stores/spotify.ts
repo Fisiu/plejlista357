@@ -1,18 +1,12 @@
-import { SpotifyApi } from "@spotify/web-api-ts-sdk";
 import { defineStore } from "pinia";
 import { computed, ref } from "vue";
 
-const scopes = ["playlist-modify-private", "playlist-modify-public", "user-read-private"];
+import { spotifyClient } from "@/api/spotifyClient";
+
 const returnPathStorageKey = "spotify:return-path";
 
 export const useSpotifyStore = defineStore("spotify", () => {
-  const clientId = import.meta.env.VITE_SPOTIFY_CLIENT_ID;
-  const origin = typeof window !== "undefined" ? window.location.origin : "http://127.0.0.1:5173";
-  const redirectUri = `${origin}/spotify-callback`;
-
-  const sdk = clientId
-    ? SpotifyApi.withUserAuthorization(clientId, redirectUri, scopes)
-    : undefined;
+  const sdk = spotifyClient;
 
   const isAuthenticated = ref(false);
   const displayName = ref<string>();

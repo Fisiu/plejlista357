@@ -59,7 +59,7 @@ function changeLabel(change: number | false): string {
                     increment-icon="i-lucide-arrow-right" decrement-icon="i-lucide-arrow-left" :min="1"
                     :max="latestChartNumber" :step="1" :disabled="isLoading" />
                 </div>
-                <PlaylistExportDialog :chart-title="chart.name + ' - ' + chart.title" />
+                <PlaylistExportDialog :chart="chart" />
               </div>
 
               <div class="flex flex-wrap justify-center gap-x-6 gap-y-3 lg:justify-end">
