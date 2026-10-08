@@ -1,11 +1,10 @@
 name: Build & Deploy to GitHub Pages
 
-
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - master
+  # push:
+  #   branches:
+  #     - master
 
 jobs:
   deploy:
@@ -22,7 +21,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 10
+          version: 12.4.1
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -34,7 +33,7 @@ jobs:
         run: pnpm install
 
       - name: Build application
-        run: pnpm build --base-href /${{ vars.GH_BASE_HREF }}/
+        run: pnpm build-only --base=/${{ vars.GH_BASE_HREF }}/
 
       - name: Add .nojekyll to public directory
         run: touch dist/${{ vars.GH_BASE_HREF }}/browser/.nojekyll
