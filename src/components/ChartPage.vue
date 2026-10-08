@@ -1,124 +1,21 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue';
-
-import { getChartByNumber, getLatestChart } from '@/api/radioCharts';
-import type { Chart, ChartType } from '@/types/radioChart';
+import type { ChartType } from '@/types/radioChart';
+import { useChart } from '@/composables/useChart';
 
 const props = defineProps<{
   chartType: ChartType;
 }>();
 
-const chartStorageKey = `radio-chart:${props.chartType}`;
-const chart = ref<Chart>();
-const chartNumber = ref(0);
-const latestChartNumber = ref(0);
-const isLoading = ref(true);
-const error = ref<Error>();
-
-// 1. Shared AbortController only for component unmount
-const unmountController = new AbortController();
-
-// 2. Shared request counter across both load functions
-let latestRequestId = 0;
-
-const chartNumberInput = computed({
-  get: () => chartNumber.value,
-  set: (value: number | undefined) => {
-    if (value !== undefined) onChartNumberValue(value);
-  },
-});
-const mainChartItems = computed(() => [...(chart.value?.results.mainChart.items ?? [])].reverse());
-
-async function loadChart(number: number, loadedChart?: Chart, inheritedRequestId?: number): Promise<void> {
-  if (number < 1 || (latestChartNumber.value > 0 && number > latestChartNumber.value)) {
-    return;
-  }
-
-  // Use the requestId passed from loadLatestChart, or generate a fresh one
-  const requestId = inheritedRequestId ?? ++latestRequestId;
-
-  isLoading.value = true;
-  error.value = undefined;
-
-  try {
-    const data = loadedChart ?? (await getChartByNumber(props.chartType, number, unmountController.signal));
-
-    // Stale check: discard if a newer request was started
-    if (requestId !== latestRequestId) return;
-
-    chart.value = data;
-    chartNumber.value = number;
-  } catch (loadError) {
-    if (unmountController.signal.aborted || requestId !== latestRequestId) return;
-    error.value = loadError instanceof Error ? loadError : new Error('Nie udało się pobrać listy');
-  } finally {
-    if (requestId === latestRequestId && !unmountController.signal.aborted) {
-      isLoading.value = false;
-    }
-  }
-}
-
-async function loadLatestChart(forceLatest = false): Promise<void> {
-  const requestId = ++latestRequestId;
-
-  isLoading.value = true;
-  error.value = undefined;
-
-  try {
-    const latestChart = await getLatestChart(props.chartType, unmountController.signal);
-
-    // Stale check after fetching latest issue info
-    if (requestId !== latestRequestId) return;
-
-    const latestNumber = Number(latestChart.no);
-    latestChartNumber.value = latestNumber;
-
-    let savedNumber: string | null = null;
-    try {
-      savedNumber = forceLatest ? null : sessionStorage.getItem(chartStorageKey);
-    } catch {
-      // Graceful fallback if storage is blocked
-    }
-
-    const requestedNumber = Number(savedNumber);
-    const initialNumber =
-      Number.isInteger(requestedNumber) && requestedNumber >= 1 && requestedNumber <= latestNumber
-        ? requestedNumber
-        : latestNumber;
-
-    try {
-      sessionStorage.setItem(chartStorageKey, String(initialNumber));
-    } catch {
-      // Graceful fallback if storage is blocked
-    }
-
-    if (initialNumber === latestNumber) {
-      await loadChart(latestNumber, latestChart, requestId);
-    } else {
-      await loadChart(initialNumber, undefined, requestId);
-    }
-  } catch (loadError) {
-    if (unmountController.signal.aborted || requestId !== latestRequestId) return;
-    error.value = loadError instanceof Error ? loadError : new Error('Nie udało się pobrać listy');
-  } finally {
-    if (requestId === latestRequestId && !unmountController.signal.aborted) {
-      isLoading.value = false;
-    }
-  }
-}
-
-function onChartNumberValue(value: string | number): void {
-  const number = Number(value);
-
-  if (Number.isInteger(number)) {
-    try {
-      sessionStorage.setItem(chartStorageKey, String(number));
-    } catch {
-      // Graceful fallback if storage is blocked
-    }
-    void loadChart(number);
-  }
-}
+const {
+  chart,
+  chartNumber,
+  chartNumberInput,
+  error,
+  isLoading,
+  latestChartNumber,
+  loadLatestChart,
+  mainChartItems,
+} = useChart(() => props.chartType);
 
 function changeColor(change: number | false): 'success' | 'error' | 'neutral' {
   if (change === false || change === 0) return 'neutral';
@@ -132,8 +29,6 @@ function changeLabel(change: number | false): string {
   return change > 0 ? `+${change}` : String(change);
 }
 
-onMounted(() => void loadLatestChart());
-onUnmounted(() => unmountController.abort());
 </script>
 
 <template>
