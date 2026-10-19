@@ -26,6 +26,11 @@ const routes: readonly RouteRecordRaw[] = [
     component: () => import("@/pages/charts/top-pl.vue"),
   },
   {
+    path: "/metal-top",
+    name: "metal-top",
+    component: () => import("@/pages/charts/metal-top.vue"),
+  },
+  {
     path: "/spotify-callback",
     name: "spotify-callback",
     component: () => import("@/pages/spotify-callback.vue"),

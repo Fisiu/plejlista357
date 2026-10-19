@@ -6,6 +6,7 @@ const chartEndpoints: Record<ChartType, string> = {
   weekly: "https://wyniki.radio357.pl/api/charts/lista",
   top: "https://wyniki.radio357.pl/api/charts/top",
   "top-pl": "https://wyniki.radio357.pl/api/charts/polski-top",
+  "metal-top": "https://wyniki.radio357.pl/api/charts/metal-top-radia-357",
 };
 
 const chartCache = new Map<string, Chart>();

@@ -1,4 +1,4 @@
-export type ChartType = "weekly" | "top" | "top-pl";
+export type ChartType = "weekly" | "top" | "top-pl" | "metal-top";
 
 export interface Chart {
   results: ChartResults;
@@ -6,7 +6,7 @@ export interface Chart {
   name: string;
   no: string;
   previous_no: string;
-  next_no: string;
+  next_no: string | null;
   published_at_date: string;
   document: string;
   title: string;
@@ -23,7 +23,7 @@ export interface ChartSummary {
 
 export interface ChartResults {
   mainChart: ChartSection;
-  waitingRoom: ChartSection;
+  waitingRoom?: ChartSection;
 }
 
 export interface ChartSection {
@@ -39,5 +39,5 @@ export interface ChartItem {
   is_new: boolean;
   last_position: number;
   times_on_chart: number;
-  change: number;
+  change: number | false;
 }

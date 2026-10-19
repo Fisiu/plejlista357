@@ -32,9 +32,10 @@ interface NavigationItem {
 }
 
 const navigationItems: NavigationItem[] = [
-  { label: 'Lista Piosenek 357', to: '/weekly', shortLabel: 'Lista 357' },
-  { label: 'Top Radia 357', to: '/top', shortLabel: 'Top' },
-  { label: 'Polski Top Radia 357', to: '/top-pl', shortLabel: 'Polski Top' },
+  { label: 'Lista Piosenek', to: '/weekly', shortLabel: 'Lista Piosenek' },
+  { label: 'Top', to: '/top', shortLabel: 'Top' },
+  { label: 'Polski Top', to: '/top-pl', shortLabel: 'Polski Top' },
+  { label: 'Metal Top', to: '/metal-top', shortLabel: 'Metal Top' },
 ]
 
 useHead({

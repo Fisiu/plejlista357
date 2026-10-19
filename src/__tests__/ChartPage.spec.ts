@@ -7,7 +7,7 @@ import { createMemoryHistory, createRouter } from "vue-router";
 
 import ChartPage from "@/components/ChartPage.vue";
 import { getChartByNumber, getLatestChart } from "@/api/radioCharts";
-import type { Chart } from "@/types/radioChart";
+import type { Chart, ChartType } from "@/types/radioChart";
 
 vi.mock("@/api/radioCharts", () => ({
   getChartByNumber: vi.fn<typeof getChartByNumber>(),
@@ -49,6 +49,30 @@ const numberedChart: Chart = {
   title: "Lista Piosenek #1",
 };
 
+const metalTopChart: Chart = {
+  ...latestChart,
+  results: {
+    mainChart: {
+      items: [
+        {
+          id: 1,
+          name: "Fear Of The Dark",
+          artist: "Iron Maiden",
+          position: 1,
+          is_new: false,
+          last_position: 3,
+          times_on_chart: 2,
+          change: false,
+        },
+      ],
+    },
+  },
+  name: "Metal Top Radia 357",
+  no: "2",
+  next_no: null,
+  title: "Metal Top Radia 357",
+};
+
 const passthroughStub = defineComponent({
   setup(_, { slots }) {
     return () => h("div", slots.default?.());
@@ -85,7 +109,7 @@ const buttonStub = defineComponent({
   },
 });
 
-function mountChart(chartType: "top" | "top-pl") {
+function mountChart(chartType: ChartType) {
   const pinia = createPinia();
   const router = createRouter({
     history: createMemoryHistory(),
@@ -132,6 +156,19 @@ describe("ChartPage", () => {
     expect(getChartByNumber).not.toHaveBeenCalled();
     expect(wrapper.text()).toContain("Lista Piosenek #2");
     expect(wrapper.text()).toContain("U2 - Yeah, Yeah, Yeah, Yeah, Yeah");
+  });
+
+  it("renders a Metal Top response without a waiting room", async () => {
+    vi.mocked(getLatestChart).mockResolvedValue(metalTopChart);
+
+    const wrapper = mountChart("metal-top");
+
+    await flushPromises();
+    await nextTick();
+
+    expect(getLatestChart).toHaveBeenCalledWith("metal-top", expect.any(AbortSignal));
+    expect(wrapper.text()).toContain("Fear Of The Dark");
+    expect(wrapper.text()).toContain("Iron Maiden");
   });
 
   it("loads a numbered chart when the number input changes", async () => {

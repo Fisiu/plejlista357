@@ -37,6 +37,7 @@ describe("radioCharts API", () => {
     ["weekly", "lista"],
     ["top", "top"],
     ["top-pl", "polski-top"],
+    ["metal-top", "metal-top-radia-357"],
   ] as const)("requests the latest %s chart", async (chartType, endpoint) => {
     vi.mocked(axios.get).mockResolvedValue({ data: chartResponse });
 
