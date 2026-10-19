@@ -68,7 +68,7 @@ useHead({
         </template>
 
         <template #right>
-          <UColorModeButton />
+          <UColorModeButton class="cursor-pointer" />
 
           <!-- Reserved container for Spotify Auth (Login / User Profile Avatar) -->
           <div class="flex items-center gap-2">
